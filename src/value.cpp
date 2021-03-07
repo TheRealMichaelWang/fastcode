@@ -633,23 +633,23 @@ bool var_context::has_val(char* identifier)
 //	return false;
 //}
 
-value* applyUniaryOp(char type, value* value)
+value* applyUniaryOp(char type, unique_refrence* value)
 {
 	switch (type)
 	{
 	case TOK_MINUS: {
-		if (value->type != VALUE_TYPE_DOUBLE)
+		if (value->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
 		{
 			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 		}
-		return new class value(-(*(double*)value->ptr));
+		return new class value(-(*(double*)value->get_var_ptr()->ptr));
 	}
 	case TOK_NOT: {
-		if (value->type != VALUE_TYPE_DOUBLE)
+		if (value->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
 		{
 			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 		}
-		double dval = *(double*)value->ptr;
+		double dval = *(double*)value->get_var_ptr()->ptr;
 		if (dval == 0.0) {
 			return new class value(1.0);
 		}
@@ -658,21 +658,21 @@ value* applyUniaryOp(char type, value* value)
 		}
 	}
 	case TOK_INCRIMENT: {
-		if (value->type != VALUE_TYPE_DOUBLE)
+		if (value->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
 		{
 			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 		}
-		class value* old = value->clone();
-		*((double*)value->ptr) = *((double*)value->ptr) + 1;
+		class value* old = value->get_var_ptr()->clone();
+		*((double*)value->get_var_ptr()->ptr) = *((double*)value->get_var_ptr()->ptr) + 1;
 		return old;
 	}
 	case TOK_DECRIMENT: {
-		if (value->type != VALUE_TYPE_DOUBLE)
+		if (value->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
 		{
 			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 		}
-		class value* old = value->clone();
-		*((double*)value->ptr) = *((double*)value->ptr) - 1;
+		class value* old = value->get_var_ptr()->clone();
+		*((double*)value->get_var_ptr()->ptr) = *((double*)value->get_var_ptr()->ptr) - 1;
 		return old;
 	}
 	default:
@@ -680,9 +680,9 @@ value* applyUniaryOp(char type, value* value)
 	}
 }
 
-value* applyBinaryOp(char type, value* a, value* b)
+value* applyBinaryOp(char type, unique_refrence* a, unique_refrence* b)
 {
-	if (a->type != b->type)
+	if (a->get_var_ptr()->type != b->get_var_ptr()->type)
 	{
 		switch (type)
 		{
@@ -696,60 +696,72 @@ value* applyBinaryOp(char type, value* a, value* b)
 	switch (type)
 	{
 	case TOK_EQUALS: {
-		return a->compare(b) == 0 ? new value(1.0) : new value(0.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) == 0 ? new value(1.0) : new value(0.0);
 	}
 	case TOK_NOT_EQUAL: {
-		return a->compare(b) == 0? new value(0.0) : new value(1.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) == 0? new value(0.0) : new value(1.0);
 	}
 	case TOK_MORE: {
-		return a->compare(b) > 0 ? new value(1.0) : new value(0.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) > 0 ? new value(1.0) : new value(0.0);
 	}
 	case TOK_LESS: {
-		return a->compare(b) < 0 ? new value(1.0) : new value(0.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) < 0 ? new value(1.0) : new value(0.0);
 	}
 	case TOK_MORE_EQUAL: {
-		return a->compare(b) >= 0 ? new value(1.0) : new value(0.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) >= 0 ? new value(1.0) : new value(0.0);
 	}
 	case TOK_LESS_EQUAL: {
-		return a->compare(b) <= 0 ? new value(1.0) : new value(0.0);
+		return a->get_var_ptr()->compare(b->get_var_ptr()) <= 0 ? new value(1.0) : new value(0.0);
 	}
 	case TOK_OR: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return (a_double != 0) || (b_double != 0) ? new value(1.0) : new value(0.0);
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_AND: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return (a_double != 0) && (b_double != 0) ? new value(1.0) : new value(0.0);
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_PLUS: {
-		switch (a->type)
+		switch (a->get_var_ptr()->type)
 		{
 		case VALUE_TYPE_DOUBLE: {
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(a_double + b_double); 
 		}
 		case VALUE_TYPE_ARRAY: {
-			value_array* a_array = (value_array*)a->ptr;
-			value_array* b_array = (value_array*)b->ptr;
+			value_array* a_array = (value_array*)a->get_var_ptr()->ptr;
+			value_array* b_array = (value_array*)b->get_var_ptr()->ptr;
 			value_array* combined = new value_array(a_array->size + b_array->size);
 			for (size_t i = 0; i < a_array->size; i++)
 			{
-				combined->collection[i] = a_array->collection[i];
+				if (a->is_root_refrence()) {
+					combined->collection[i] = new unique_refrence(a_array->collection[i]->get_var_ptr(), nullptr, nullptr);
+					a_array->collection[i]->change_refrence(combined->collection[i]);
+				}
+				else {
+					combined->collection[i] = new unique_refrence(a_array->collection[i]->get_var_ptr(), a_array->collection[i], nullptr);
+				}
 			}
 			for (size_t i = 0; i < b_array->size; i++)
 			{
-				combined->collection[i + a_array->size] = b_array->collection[i];
+				if (b->is_root_refrence()) {
+					combined->collection[i + a_array->size] = new unique_refrence(b_array->collection[i]->get_var_ptr(), nullptr, nullptr);
+					b_array->collection[i]->change_refrence(combined->collection[i+a_array->size]);
+				}
+				else {
+					combined->collection[i + a_array->size] = new unique_refrence(b_array->collection[i]->get_var_ptr(), b_array->collection[i], nullptr);
+				}
 			}
 			return new value(VALUE_TYPE_ARRAY, combined);
 		}
@@ -758,46 +770,46 @@ value* applyBinaryOp(char type, value* a, value* b)
 		}
 	}
 	case TOK_MINUS: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(a_double - b_double);
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_ASTERISK: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(a_double * b_double);
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_SLASH: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(a_double / b_double);
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_MODULOUS: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(fmod(a_double, b_double));
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 	}
 	case TOK_CARET: {
-		if (a->type == VALUE_TYPE_DOUBLE)
+		if (a->get_var_ptr()->type == VALUE_TYPE_DOUBLE)
 		{
-			double a_double = *(double*)a->ptr;
-			double b_double = *(double*)b->ptr;
+			double a_double = *(double*)a->get_var_ptr()->ptr;
+			double b_double = *(double*)b->get_var_ptr()->ptr;
 			return new value(pow(a_double, b_double));
 		}
 		throw ERROR_MUST_HAVE_DOUBLE_TYPE;

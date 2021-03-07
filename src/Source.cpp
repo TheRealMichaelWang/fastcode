@@ -93,7 +93,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		uniary_operator_token* uni_op = (uniary_operator_token*)token;
 		unique_refrence* temp_a = getValue(context, uni_op->value,true);
 		temp_a->replaceNullContext(context);
-		value* result = applyUniaryOp(uni_op->op_type, temp_a->get_var_ptr());
+		value* result = applyUniaryOp(uni_op->op_type, temp_a);
 		delete temp_a;
 		return new unique_refrence(result, nullptr, nullptr);
 	}
@@ -103,7 +103,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		temp_a->replaceNullContext(context);
 		unique_refrence* temp_b = getValue(context, bin_op->right, false);
 		temp_a->replaceNullContext(context);
-		value* result = applyBinaryOp(bin_op->op_type, temp_a->get_var_ptr(), temp_b->get_var_ptr());
+		value* result = applyBinaryOp(bin_op->op_type, temp_a, temp_b);
 		delete temp_a;
 		delete temp_b;
 		return new unique_refrence(result, nullptr, nullptr);

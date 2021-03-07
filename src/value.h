@@ -111,7 +111,7 @@ public:
 	//bool has_val_ptr(value* val_ptr);
 };
 
-value* applyUniaryOp(char type, value* value);
-value* applyBinaryOp(char type, value* a, value* b);
+value* applyUniaryOp(char type, unique_refrence* value);
+value* applyBinaryOp(char type, unique_refrence* a, unique_refrence* b);
 
 #endif // !VALUE_H
