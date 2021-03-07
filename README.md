@@ -1,6 +1,8 @@
 # fastcode
 A perfect blend of C, Java, and Python tailored for those who desire a simple yet powerful programming language.
 
+Click [here](https://github.com/TheRealMichaelWang/fastcode/raw/main/fastcode.exe) to download.
+
 Here's an example (fizzbuzz).
 ```
 proc range(n) {
