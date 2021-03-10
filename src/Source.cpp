@@ -493,7 +493,7 @@ int main(int argc, char** argv)
 				str_append(block, line);
 				str_append(block, "\n");
 				delete[] line;
-				if (block_checksum(block) == 0)
+				if (block_checksum(block))
 				{
 					break;
 				}
