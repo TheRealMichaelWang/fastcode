@@ -1,7 +1,5 @@
-#include <fstream>
 #include <ctype.h>
 #include <iostream>
-#include <string>
 #include <string.h>
 #include "error.h"
 #include "token.h"
@@ -714,6 +712,16 @@ token* lexer::tokenizeValue()
 		else
 		{
 			tok = identifier;
+			if (last_tok->type == TOK_INCRIMENT) {
+				delete last_tok;
+				last_tok = readNextToken();
+				return new uniary_operator_token(TOK_INCRIMENT, tok);
+			}
+			else if (last_tok->type == TOK_DECRIMENT) {
+				delete last_tok;
+				last_tok = readNextToken();
+				return new uniary_operator_token(TOK_DECRIMENT, tok);
+			}
 		}
 		return tok;
 	}
