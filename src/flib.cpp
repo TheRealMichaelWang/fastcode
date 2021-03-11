@@ -83,7 +83,7 @@ int block_checksum(char* line)
 			paren_sum--;
 		}
 	}
-	return brace_sum + bracket_sum + paren_sum;
+	return brace_sum == bracket_sum == paren_sum == 0;
 }
 
 void str_append(char* to_append, const char* append_with)
