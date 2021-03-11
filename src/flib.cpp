@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string.h>
 #include "error.h"
 #include "flib.h"
 
