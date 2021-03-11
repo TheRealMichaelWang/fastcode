@@ -1,6 +1,8 @@
 #include <iostream>
 #include <stack>
 #include <map>
+#include <string.h>
+#include <fstream>
 #include "flib.h"
 #include "lexer.h"
 #include "value.h"
@@ -465,80 +467,94 @@ escape:
 	return return_value;
 }
 
+void load_tokens(std::stack<token_set*>* all_instructions, call_frame* main_frame, char* block)
+{
+	
+	lexer* lexer = new class lexer((const char*)block);
+	token_set* instructions = nullptr;
+	try {
+		instructions = lexer->tokenize();
+	}
+	catch (int error) {
+		error_info(error);
+		std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+	}
+	delete lexer;
+	delete[] block;
+
+	if (instructions != nullptr) {
+		all_instructions->push(instructions);
+
+		main_frame->instructions = instructions;
+		try {
+			delete execute(main_frame, instructions);
+		}
+		catch (int e)
+		{
+			std::cout << std::endl;
+			error_info(e);
+		}
+		main_frame->isFinished = false;
+	}
+}
+
+void readAndRun(std::stack<token_set*>* all_instructions, call_frame* main_frame, std::istream* input, bool interactive)
+{
+	while (!req_exit)
+	{
+		char* block = new char[1000];
+		block[0] = 0;
+		int line_n = 1;
+		while (true)
+		{
+			if (interactive) {
+				std::cout << std::endl << line_n << ':';
+			}
+			char* line = new char[250];
+			input->getline(line, 250);
+			str_append(block, line);
+			str_append(block, "\n");
+			delete[] line;
+			if (block_checksum(block) == 0)
+			{
+				break;
+			}
+			line_n++;
+		}
+		load_tokens(all_instructions, main_frame, block);
+	}
+}
+
 int main(int argc, char** argv)
 {
+	std::istream *input = &std::cin;
+	bool interactive = true;
 	req_exit = false;
 	functionDefinitions = new std::map<char*, function_prototype*, CompareIdentifiers>();
 	structDefinitions = new std::map<char*, struct_prototype*, CompareIdentifiers>();
 	static_context = new var_context(nullptr);
 	if (argc > 1)
 	{
-		req_exit = true;
+		input = new std::ifstream(argv[1]);
+		interactive = false;
 	}
 	else {
 		std::cout << "FastCode [Version 1.0, written and designed by Michael Wang]" <<std::endl << "Type 'stop()' or 'abort()' to quit." << std::endl << std::endl;
-		call_frame* main_frame = new call_frame(new var_context(nullptr));
-		std::stack<token_set*>* all_instructions = new std::stack<token_set*>();
-		while (!req_exit)
-		{
-			char* block = new char[1000];
-			block[0] = 0;
-			int line_n = 1;
-			while (true)
-			{
-				std::cout << line_n;
-				std::cout << ':';
-				char* line = new char[250];
-				std::cin.getline(line, 250);
-				str_append(block, line);
-				str_append(block, "\n");
-				delete[] line;
-				if (block_checksum(block) == 0)
-				{
-					break;
-				}
-				line_n++;
-			}
-
-			lexer* lexer = new class lexer((const char*)block);
-			token_set* instructions = nullptr;
-			try {
-				instructions = lexer->tokenize();
-			}
-			catch (int error) {
-				error_info(error);
-				std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
-			}
-			delete lexer;
-			delete[] block;
-
-			if (instructions != nullptr) {
-				all_instructions->push(instructions);
-
-				main_frame->instructions = instructions;
-				try {
-					delete execute(main_frame, instructions);
-				}
-				catch (int e)
-				{
-					std::cout << std::endl;
-					error_info(e);
-				}
-				main_frame->isFinished = false;
-				std::cout << std::endl;
-			}
-		}
-
-		delete main_frame;
-
-		while (!all_instructions->empty())
-		{
-			token_set* to_delete = all_instructions->top();
-			all_instructions->pop();
-			delete to_delete;
-		}
-		delete all_instructions;
 	}
+	call_frame* main_frame = new call_frame(new var_context(nullptr));
+	std::stack<token_set*>* all_instructions = new std::stack<token_set*>();
+	
+	readAndRun(all_instructions, main_frame, input, interactive);
+
+	delete main_frame;
+
+	while (!all_instructions->empty())
+	{
+		token_set* to_delete = all_instructions->top();
+		all_instructions->pop();
+		delete to_delete;
+	}
+	delete all_instructions;
 	delete structDefinitions;
 	delete functionDefinitions;
 	delete static_context;
