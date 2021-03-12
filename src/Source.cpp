@@ -486,14 +486,29 @@ int main(int argc, char** argv)
 			buffer[buffer_length] = '\0';
 
 			lexer* lexer = new class lexer(buffer);
-			token_set* tokens = lexer->tokenize();
+			token_set* tokens = nullptr;
+			try {
+				tokens = lexer->tokenize();
+			}
+			catch (int error) {
+				error_info(error);
+				std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+			}
 			delete lexer;
 			delete[] buffer;
 
-			call_frame* main_frame = new call_frame(tokens);
-			delete execute(main_frame, tokens);
-			delete main_frame;
-			delete tokens;
+			if (tokens != nullptr) {
+				call_frame* main_frame = new call_frame(tokens);
+				try {
+					delete execute(main_frame, tokens);
+				}
+				catch (int e){
+					std::cout << std::endl;
+					error_info(e);
+				}
+				delete main_frame;
+				delete tokens;
+			}
 		}
 		else {
 			std::cout << "Unable to open file \"" << argv[1] << "\".";
