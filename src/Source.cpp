@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <stack>
 #include <map>
 #include "flib.h"
@@ -473,6 +474,31 @@ int main(int argc, char** argv)
 	static_context = new var_context(nullptr);
 	if (argc > 1)
 	{
+		std::ifstream infile;
+		infile.open(argv[1], std::ifstream::binary);
+		if (infile.is_open()) {
+			infile.seekg(0, std::ios::end);
+			int buffer_length = infile.tellg();
+			infile.seekg(0, std::ios::beg);
+			char* buffer = new char[buffer_length+1];
+			infile.read(buffer, buffer_length);
+			infile.close();
+			buffer[buffer_length] = '\0';
+
+			lexer* lexer = new class lexer(buffer);
+			token_set* tokens = lexer->tokenize();
+			delete lexer;
+			delete[] buffer;
+
+			call_frame* main_frame = new call_frame(tokens);
+			delete execute(main_frame, tokens);
+			delete main_frame;
+			delete tokens;
+		}
+		else {
+			std::cout << "Unable to open file \"" << argv[1] << "\".";
+		}
+
 		req_exit = true;
 	}
 	else {
