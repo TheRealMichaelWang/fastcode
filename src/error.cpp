@@ -60,6 +60,9 @@ void error_info(int error)
 	case ERROR_NOT_IN_VAR_CONTEXT:{
 		std::cout << "Runtime Error: No such identifier corresponds to a static or local variable."; break;
 	}
+	case ERROR_FILE_NOT_FOUND: {
+		std::cout << "Runtime Error: The requested file could not be opened.";
+	}
 	default:
 		std::cout << "Unrecognized Error Type";
 	}

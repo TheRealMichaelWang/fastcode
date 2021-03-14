@@ -440,7 +440,7 @@ token_set* lexer::tokenize()
 				delete last_tok;
 				last_tok = readNextToken();
 				token_set* body = new token_set();
-				body->push(new return_tok(tokenizeExpression()));
+				body->push(new return_token(tokenizeExpression()));
 
 				struct function_prototype* function_prototype = new struct function_prototype(identifier, params, body);
 				tok_set->push(function_prototype);
@@ -493,7 +493,7 @@ token_set* lexer::tokenize()
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();
-				body->push(new return_tok(tokenizeExpression()));
+				body->push(new return_token(tokenizeExpression()));
 			}
 			else {
 				throw ERROR_UNEXPECTED_TOK;
@@ -518,7 +518,7 @@ token_set* lexer::tokenize()
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();
-				body->push(new return_tok(tokenizeExpression()));
+				body->push(new return_token(tokenizeExpression()));
 			}
 			else {
 				throw ERROR_UNEXPECTED_TOK;
@@ -552,7 +552,7 @@ token_set* lexer::tokenize()
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();
-				body->push(new return_tok(tokenizeExpression()));
+				body->push(new return_token(tokenizeExpression()));
 			}
 			else {
 				throw ERROR_UNEXPECTED_TOK;
@@ -618,11 +618,11 @@ token_set* lexer::tokenize()
 			last_tok = readNextToken();
 			if (last_tok->type == TOK_IDENTIFIER || last_tok->type == TOK_VALUE || is_op_token(last_tok->type))
 			{
-				tok_set->push(new return_tok(tokenizeExpression()));
+				tok_set->push(new return_token(tokenizeExpression()));
 			}
 			else
 			{
-				tok_set->push(new return_tok());
+				tok_set->push(new return_token());
 			}
 			break;
 		}
@@ -639,6 +639,29 @@ token_set* lexer::tokenize()
 			delete last_tok;
 			last_tok = readNextToken();
 			req_make_glob_var = true;
+			break;
+		}
+		case TOK_IMPORT: {
+			delete last_tok;
+			value_token* val_tok = (value_token*)readNextToken();
+			if (val_tok->value->type != VALUE_TYPE_ARRAY) {
+				throw ERROR_UNEXPECTED_TOK;
+			}
+			value_array* char_array = (value_array*)val_tok->value->ptr;
+			if (!char_array->checktype(VALUE_TYPE_CHAR)) {
+				throw ERROR_UNEXPECTED_TOK;
+			}
+			char* str = new char[char_array->size+1];
+			for (size_t i = 0; i < char_array->size; i++)
+			{
+				str[i] = *(char*)char_array->collection[i]->get_var_ptr()->ptr;
+			}
+			str[char_array->size] = '\0';
+			delete val_tok;
+
+			tok_set->push(new import_token(str));
+
+			last_tok = readNextToken();
 			break;
 		}
 		default:
@@ -675,7 +698,7 @@ token* lexer::tokenizeValue()
 	case TOK_REFRENCE: {
 		delete last_tok;
 		last_tok = readNextToken();
-		return new refrence_tok(tokenizeValue());
+		return new refrence_token(tokenizeValue());
 	}
 	case TOK_VALUE:
 		tok = last_tok; break;

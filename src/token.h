@@ -204,13 +204,13 @@ public:
 	~create_struct();
 };
 
-struct return_tok:public token
+struct return_token:public token
 {
 public:
 	token* ret_tok;
-	return_tok();
-	return_tok(token* return_tok);
-	~return_tok();
+	return_token();
+	return_token(token* return_tok);
+	~return_token();
 };
 
 struct create_array :public token
@@ -221,12 +221,20 @@ public:
 	~create_array();
 };
 
-struct refrence_tok :public token
+struct refrence_token :public token
 {
 public:
 	token* value;
-	refrence_tok(token* value);
-	~refrence_tok();
+	refrence_token(token* value);
+	~refrence_token();
+};
+
+struct import_token : public token
+{
+public:
+	char* path;
+	import_token(char* path);
+	~import_token();
 };
 
 void generic_destroy_token(token* tok);
