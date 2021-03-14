@@ -117,7 +117,17 @@ void generic_destroy_token(token* token)
 		break;
 	}
 	case TOK_RETURN: {
-		return_tok* tok = (return_tok*)token;
+		return_token* tok = (return_token*)token;
+		delete tok;
+		break;
+	}
+	case TOK_REFRENCE: {
+		refrence_token* ref = (refrence_token*)token;
+		delete ref;
+		break;
+	}
+	case TOK_IMPORT: {
+		import_token* tok = (import_token*)token;
 		delete tok;
 		break;
 	}
@@ -328,17 +338,17 @@ create_struct::~create_struct()
 	delete this->identifier;
 }
 
-return_tok::return_tok() : token(TOK_RETURN)
+return_token::return_token() : token(TOK_RETURN)
 {
 	this->ret_tok = nullptr;
 }
 
-return_tok::return_tok(token* return_tok) : token(TOK_RETURN)
+return_token::return_token(token* return_tok) : token(TOK_RETURN)
 {
 	this->ret_tok = return_tok;
 }
 
-return_tok::~return_tok()
+return_token::~return_token()
 {
 	if (this->ret_tok != nullptr)
 	{
@@ -356,13 +366,21 @@ create_array::~create_array()
 	delete this->items;
 }
 
-refrence_tok::refrence_tok(token* value) : token(TOK_REFRENCE){
+refrence_token::refrence_token(token* value) : token(TOK_REFRENCE){
 	this->value = value;
 }
 
-refrence_tok::~refrence_tok()
+refrence_token::~refrence_token()
 {
 	generic_destroy_token(this->value);
+}
+
+import_token::import_token(char* path) : token(TOK_IMPORT) {
+	this->path = path;
+}
+
+import_token::~import_token() {
+	delete this->path;
 }
 
 bool is_op_token(char tok_type)

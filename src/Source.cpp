@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <stack>
+#include <set>
 #include <map>
 #include "flib.h"
 #include "lexer.h"
@@ -56,6 +57,8 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions);
 
 static std::map<char*, function_prototype*, CompareIdentifiers>* functionDefinitions;
 static std::map<char*, struct_prototype*, CompareIdentifiers>* structDefinitions;
+static std::set<char*, CompareIdentifiers>* importSet;
+static std::stack<token_set*>* importedTokens;
 static var_context* static_context;
 static bool req_exit;
 
@@ -87,7 +90,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		return new unique_refrence(var_ptr->get_var_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
-		refrence_tok* refrence = (refrence_tok*)token;
+		refrence_token* refrence = (refrence_token*)token;
 		return getValue(context, refrence->value, true);
 	}
 	case TOK_UNIARY_OP:{
@@ -294,7 +297,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			break;
 		}
 		case TOK_RETURN: {
-			return_tok* ret_tok = (return_tok*)current_token;
+			return_token* ret_tok = (return_token*)current_token;
 			if (ret_tok->ret_tok != nullptr)
 			{
 				call_frame->isFinished = true;
@@ -424,6 +427,46 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			call_frame->context->remove(for_tok->iterator_identifier->identifier);
 			break;
 		}
+		case TOK_IMPORT: {
+			import_token* import_tok = (import_token*)current_token;
+			if (importSet->count(import_tok->path)) {
+				break;
+			}
+			std::ifstream infile;
+			infile.open(import_tok->path, std::ifstream::binary);
+			if (infile.is_open()) {
+				importSet->insert(import_tok->path);
+				infile.seekg(0, std::ios::end);
+				int buffer_length = infile.tellg();
+				infile.seekg(0, std::ios::beg);
+				char* buffer = new char[buffer_length + 1];
+				infile.read(buffer, buffer_length);
+				infile.close();
+				buffer[buffer_length] = '\0';
+				lexer* lexer = new class lexer(buffer);
+				token_set* tokens = nullptr;
+				try {
+					tokens = lexer->tokenize();
+				}
+				catch (int error) {
+					error_info(error);
+					std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+				}
+				delete lexer;
+				delete[] buffer;
+				if (tokens != nullptr) {
+					importedTokens->push(tokens);
+					delete execute(call_frame, tokens);
+				}
+				else {
+					throw ERROR_IMPORT_SYNTAX_ERR;
+				}
+			}
+			else {
+				throw ERROR_FILE_NOT_FOUND;
+			}
+			break;
+		}
 		case TOK_CALL_FUNCTION: {
 			delete getValue(call_frame->context, current_token, false);
 			break;
@@ -471,6 +514,8 @@ int main(int argc, char** argv)
 	req_exit = false;
 	functionDefinitions = new std::map<char*, function_prototype*, CompareIdentifiers>();
 	structDefinitions = new std::map<char*, struct_prototype*, CompareIdentifiers>();
+	importSet = new std::set<char*, CompareIdentifiers>();
+	importedTokens = new std::stack<token_set*>();
 	static_context = new var_context(nullptr);
 	if (argc > 1)
 	{
@@ -498,6 +543,7 @@ int main(int argc, char** argv)
 			delete[] buffer;
 
 			if (tokens != nullptr) {
+				importSet->insert(argv[1]);
 				call_frame* main_frame = new call_frame(tokens);
 				try {
 					delete execute(main_frame, tokens);
@@ -580,6 +626,14 @@ int main(int argc, char** argv)
 		}
 		delete all_instructions;
 	}
+	while (!importedTokens->empty())
+	{
+		token_set* to_delete = importedTokens->top();
+		importedTokens->pop();
+		delete to_delete;
+	}
+	delete importSet;
+	delete importedTokens;
 	delete structDefinitions;
 	delete functionDefinitions;
 	delete static_context;

@@ -28,6 +28,9 @@
 #define ERROR_FUNCTION_NOT_FOUND 17
 #define ERROR_STRUCT_NOT_FOUND 18
 
+#define ERROR_FILE_NOT_FOUND 19
+#define ERROR_IMPORT_SYNTAX_ERR 20
+
 void error_info(int error);
 
 #endif // !ERROR_H
