@@ -115,6 +115,18 @@ public:
 	//bool has_val_ptr(value* val_ptr);
 };
 
+//class refrence_outflow {
+//private:
+//	int allocated_size;
+//	void extend(int n);
+//public:
+//	int size;
+//	unique_refrence** references;
+//	refrence_outflow();
+//	~refrence_outflow();
+//	void push(unique_refrence* refrence);
+//};
+
 value* applyUniaryOp(char type, unique_refrence* value);
 value* applyBinaryOp(char type, unique_refrence* a, unique_refrence* b);
 

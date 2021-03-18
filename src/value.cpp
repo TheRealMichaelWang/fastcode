@@ -310,7 +310,7 @@ bool unique_refrence::context_check(var_context* del_context) {
 	if (this->parent_refrence != nullptr) {
 		this->parent_refrence = refrence_check(this->parent_refrence);
 		if (parent_refrence->parent_context == del_context) {
-			parent_context->parent_context = nullptr;
+			parent_refrence->parent_context = nullptr;
 		}
 	}
 	value* val_ptr = get_var_ptr();
@@ -398,6 +398,9 @@ bool unique_refrence::context_check(var_context* del_context) {
 }
 
 void unique_refrence::replaceNullContext(var_context* new_context) {
+	if (this->parent_refrence != nullptr) {
+		parent_refrence->replaceNullContext(new_context);
+	}
 	if (this->parent_context == nullptr) {
 		this->parent_context = new_context;
 	}
@@ -423,10 +426,11 @@ void unique_refrence::replaceNullContext(var_context* new_context) {
 }
 
 unique_refrence* unique_refrence::refrence_check(unique_refrence* new_parent) {
-	if (!new_parent->is_root_refrence()) {
-		return new_parent->parent_refrence;
+	unique_refrence* current = new_parent;
+	while (!current->is_root_refrence()) {
+		current = current->parent_refrence;
 	}
-	return new_parent;
+	return current;
 }
 
 value_array::value_array(int size)
@@ -724,6 +728,39 @@ bool var_context::has_val(char* identifier)
 //		}
 //	}
 //	return false;
+//}
+
+//void refrence_outflow::extend(int n) {
+//	unique_refrence** old_vars = this->references;
+//	references = new unique_refrence * [allocated_size + n];
+//	allocated_size += n;
+//	for (size_t i = 0; i < size; i++)
+//	{
+//		references[i] = old_vars[i];
+//	}
+//	delete[] old_vars;
+//}
+//
+//refrence_outflow::refrence_outflow() {
+//	allocated_size = 10; 
+//	size = 0;
+//	this->references = new unique_refrence *[allocated_size];
+//}
+//
+//refrence_outflow::~refrence_outflow() {
+//	for (size_t i = 0; i < size; i++)
+//	{
+//		delete references[i];
+//	}
+//	delete[] references;
+//}
+//
+//void refrence_outflow::push(unique_refrence* refrences) {
+//	if (size == allocated_size)
+//	{
+//		extend(5);
+//	}
+//	this->references[size++] = refrences;
 //}
 
 value* applyUniaryOp(char type, unique_refrence* value)
