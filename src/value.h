@@ -28,12 +28,14 @@ public:
 	value(value_array* array);
 	value();
 	~value();
-	void print();
+	void print(int indent = 0);
 	unique_refrence* iterate(size_t index);
 	double length();
 	value* clone();
 	value* shallowClone();
-	int compare(value* value);
+	double compare(value* value);
+	bool contains(value* key);
+	bool check_delete(value* to_delete);
 	//bool has_val_ptr(value* val_ptr);
 };
 
@@ -45,11 +47,13 @@ public:
 	unique_refrence(value* value_ptr, unique_refrence* parent_refrence, var_context* parent_context);
 	~unique_refrence();
 	bool is_root_refrence();
-	void set_var_ptr(value* new_ptr);
+	void set_var_ptr(value* new_ptr, bool alter_parent = true);
 	value* get_var_ptr();
 	void change_refrence(unique_refrence* new_ref);
-	bool context_check(var_context* delete_context, bool allow_correct);
+	bool context_check(var_context* delete_context);
 	void replaceNullContext(var_context* new_context);
+private:
+	unique_refrence* refrence_check(unique_refrence* new_parent_refrence);
 };
 
 class value_array
@@ -64,8 +68,8 @@ public:
 	bool checktype(char type);
 	unique_refrence* iterate(size_t index);
 	value_array* clone();
-	value_array* shallowClone();
-	int compare(value_array* array);
+	value_array* shallowClone(bool take_ownership = true);
+	double compare(value_array* array);
 	//bool has_val_ptr(value* val_ptr);
 };
 

@@ -1,0 +1,35 @@
+static E = 2.71828
+
+proc log10(num) {
+	x = num //fastcode automatically clones doubles, so you can omit calling clone 
+	if x == 1 => 0
+	elif x <= 0 => null //return null on error
+
+	n = 0
+
+	while x >= 1 {
+		x = x / 10
+		n++
+	}
+
+	while x <= 0.316227766016838 { //while x < sqrt(10^-1)
+		x = x * 10
+		n--
+	}
+
+	z = (x - 1) / (x + 1)
+	D = 0.868588964 //2 * log10(e)
+
+	sum = z
+	k = 3
+	while k < 23 {
+		sum = sum + 
+			z ^ k / k
+		k = k + 2
+	}
+	return D*sum + n
+}
+
+proc log(n, base) => log10(n) / log10(base)
+
+proc ln(n) => log(n, E)

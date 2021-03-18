@@ -1,0 +1,40 @@
+import "math.txt"
+
+global alphanum_chars = "0123456789"
+
+rem converts an whole number string to a double
+proc stoi(str) {
+	i = 0
+	d = 0
+	while i < len(str) {
+		c_i = 0
+		while c_i < len(alphanum_chars) {
+			if str[i] == alphanum_chars[c_i] {
+				break
+			}
+			c_i++
+		}
+		if c_i == len(alphanum_chars) {
+			print(str[i])
+			return null
+		}
+		d = d + c_i * 10 ^ (len(str) - i - 1)
+		i++
+	}
+	return d
+}
+
+rem converts an whole number double to a string
+proc itos(int) {
+	digits = ceil(log10(int))
+	str = array(digits)
+	i = digits - 1
+	to_print = int
+	while i >= 0 {
+		digit = floor(to_print / 10^i)
+		str[digits - i - 1] = alphanum_chars[digit]
+		to_print = to_print - digit * 10^i
+		i--
+	}
+	return str
+}
