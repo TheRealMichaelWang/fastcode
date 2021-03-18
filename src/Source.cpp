@@ -79,14 +79,14 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 	case TOK_IDENTIFIER:{
 		unique_refrence* var_ptr = getVarPtr(context, (identifier_token*)token);
-		if (var_ptr->get_var_ptr()->type == VALUE_TYPE_ARRAY || force_refrence)
+		if (var_ptr->get_var_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
 		{
-			return new unique_refrence(var_ptr->get_var_ptr(), var_ptr, var_ptr->parent_context);
-		}
+			return new unique_refrence(var_ptr->get_var_ptr(), var_ptr, nullptr);
+		}/*
 		else if(var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT){
 			structure* shallow_copy = ((structure*)var_ptr->get_var_ptr()->ptr)->shallowClone(false);
 			return new unique_refrence(new value(VALUE_TYPE_STRUCT, shallow_copy), nullptr, nullptr);
-		}
+		}*/
 		return new unique_refrence(var_ptr->get_var_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
@@ -143,24 +143,32 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			{
 				identifier_token* param = (identifier_token*)prototype->params->tokens[i];
 				unique_refrence* arg_dat = getValue(context, func_call->arguments->tokens[i], true);
-				unique_refrence* arg = to_execute->context->declare(param->identifier, new unique_refrence(new value(), nullptr, to_execute->context));
-				arg->set_var_ptr(arg_dat->get_var_ptr());
-				arg->replaceNullContext(to_execute->context);
 				if (arg_dat->is_root_refrence()) {
-					arg_dat->parent_refrence = arg;
+					arg_dat->replaceNullContext(to_execute->context);
+					to_execute->context->declare(param->identifier, arg_dat);
 				}
 				else {
-					arg->change_refrence(arg_dat->parent_refrence);
+					to_execute->context->declare(param->identifier, arg_dat->parent_refrence);
+					delete arg_dat;
 				}
-				delete arg_dat;
+				//unique_refrence* arg = to_execute->context->declare(param->identifier, new unique_refrence(arg_dat->get_var_ptr(), arg_dat, to_execute->context));
+				////arg->set_var_ptr(arg_dat->get_var_ptr());
+				//arg->replaceNullContext(to_execute->context);
+				///*if (arg_dat->is_root_refrence()) {
+				//	arg_dat->parent_refrence = arg;
+				//}
+				//else {
+				//	arg->change_refrence(arg_dat->parent_refrence);
+				//}*/
+				//delete arg_dat;
 			}
 			unique_refrence* toret = execute(to_execute, prototype->body);
-			toret->context_check(to_execute->context, true);
+			toret->context_check(to_execute->context);
 			toret->replaceNullContext(context);
 			for (size_t i = 0; i < prototype->params->size; i++)
 			{
 				if (to_execute->context->collection[i]->unique_ref->parent_refrence != nullptr) {
-					to_execute->context->collection[i]->unique_ref->context_check(to_execute->context, true);
+					to_execute->context->collection[i]->unique_ref->context_check(to_execute->context);
 					to_execute->context->collection[i]->unique_ref->replaceNullContext(context);
 				}
 			}
@@ -274,23 +282,24 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			if (!set_var->identifier->hasModifiers() && !call_frame->context->has_val(set_var->identifier->identifier) && !static_context->has_val(set_var->identifier->identifier))
 			{
 				if (set_var->global) {
-					var_ptr = static_context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, nullptr));
+					var_ptr = static_context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, static_context));
 				}
 				else {
-					var_ptr = call_frame->context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, nullptr));
+					var_ptr = call_frame->context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, call_frame->context));
 				}
 			}
 			if (var_ptr == nullptr) {
 				var_ptr = getVarPtr(call_frame->context, set_var->identifier);
 			}
 			unique_refrence* val_ptr = getValue(call_frame->context, set_var->set_tok, false);
-			var_ptr->set_var_ptr(val_ptr->get_var_ptr());
 			if (val_ptr->is_root_refrence()) {
 				//var_ptr->parent_context = call_frame->context;
+				var_ptr->set_var_ptr(val_ptr->get_var_ptr());
 				var_ptr->replaceNullContext(call_frame->context);
 				val_ptr->parent_refrence = var_ptr;
 			}
 			else {
+				var_ptr->set_var_ptr(val_ptr->get_var_ptr(), false);
 				var_ptr->change_refrence(val_ptr->parent_refrence);
 			}
 			delete val_ptr;
@@ -403,7 +412,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			for (size_t i = 0; i < limit; i++)
 			{
 				unique_refrence* i_ref = to_iterate->get_var_ptr()->iterate(i);
-				iterator->set_var_ptr(i_ref->get_var_ptr());
+				iterator->set_var_ptr(i_ref->get_var_ptr(), false);
 				iterator->change_refrence(i_ref);
 				unique_refrence* p_return_val = execute(call_frame, for_tok->instructions);
 				if (req_exit) {

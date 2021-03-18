@@ -130,12 +130,15 @@ token* lexer::readNextToken()
 			return readNextToken();
 		}
 		else if (strcmp(identifier, "true") == 0) {
+			delete[] identifier; 
 			return new value_token(new value(1.0));
 		}
 		else if (strcmp(identifier, "false") == 0) {
+			delete[] identifier;
 			return new value_token(new value(0.0));
 		}
 		else if (strcmp(identifier, "null") == 0) {
+			delete[] identifier;
 			return new value_token(new value());
 		}
 		else
@@ -435,6 +438,7 @@ token_set* lexer::tokenize()
 
 				struct function_prototype* function_prototype = new struct function_prototype(identifier, params, body);
 				tok_set->push(function_prototype);
+				last_tok = readNextToken();
 			}
 			else if (last_tok->type == TOK_QUICK_RETURN) {
 				delete last_tok;
@@ -448,7 +452,6 @@ token_set* lexer::tokenize()
 			else {
 				throw ERROR_UNEXPECTED_TOK;
 			}
-			last_tok = readNextToken();
 			break;
 		}
 		case TOK_STRUCT:
@@ -616,7 +619,7 @@ token_set* lexer::tokenize()
 		{
 			delete last_tok;
 			last_tok = readNextToken();
-			if (last_tok->type == TOK_IDENTIFIER || last_tok->type == TOK_VALUE || is_op_token(last_tok->type))
+			if (last_tok->type == TOK_IDENTIFIER || last_tok->type == TOK_VALUE || last_tok->type == TOK_OPEN_BRACKET || is_op_token(last_tok->type))
 			{
 				tok_set->push(new return_token(tokenizeExpression()));
 			}
@@ -761,8 +764,7 @@ token* lexer::tokenizeValue()
 		tok = tokenizeExpression();
 		matchTok(last_tok->type, TOK_CLOSE_PAREN); 
 		delete last_tok;
-		last_tok = readNextToken();
-		return tok;
+		break;
 	}
 	case TOK_OPEN_BRACKET: {
 		token_set* array_items = new token_set();
@@ -838,7 +840,14 @@ identifier_token* lexer::tokenizeIdentifier()
 			delete last_tok;
 			matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER);
 			identifier_token* property_tok = (identifier_token*)last_tok;
-			modifiers->push(new property_token(property_tok->identifier));
+			char* new_id = new char[strlen(property_tok->identifier) + 1];
+			for (size_t i = 0; i < strlen(property_tok->identifier); i++)
+			{
+				new_id[i] = property_tok->identifier[i];
+			}
+			new_id[strlen(property_tok->identifier)] = '\0';
+			modifiers->push(new property_token(new_id));
+			delete property_tok;
 			break;
 		}
 		case TOK_OPEN_BRACKET:

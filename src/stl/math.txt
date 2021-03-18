@@ -1,0 +1,43 @@
+import "math/log.txt"
+
+rem Gets the lower whole number of a decimal
+proc floor(double) => double - (double % 1)
+
+rem Gets the upper whole number of a decimal
+proc ceil(double) => floor(double) + 1
+
+proc abs(n) {
+	if n >= 0 => n
+	else => -n
+}
+
+proc min(a, b) {
+	if b < a => b
+	else => a
+}
+
+proc max(a, b) {
+	if b > a => b
+	else => a
+}
+
+proc sqrt(n) => n^0.5
+
+rem Approximatly Rationalize a decimal
+proc rational(decimal) {
+	precision = 0.0000001 //change at your leisure
+	upper = 1
+	lower = 1
+	df = 1
+	while abs(df - decimal) > precision {
+		if df < decimal {
+			upper++
+		}
+		else {
+			lower++
+			upper = floor(decimal * lower)
+		}
+		df = upper / lower
+	}
+	return [upper, lower]
+}

@@ -35,19 +35,12 @@ procedure pop(head) {
 	}
 	else {
 		current = head
-		parent = null
 		while current.next != null {
-			parent = current
 			current = current.next
 		}
-		value = current.value
-		if parent == null {
-			head = null
-		}
-		else {
-			parent.next = null
-		}
-		return value
+		val = current.value
+		current = null
+		return val
 	}
 }
 

@@ -6,12 +6,9 @@ value* readLine(var_context* parent_context)
 {
 	char* input_buffer = new char[250];
 	std::cin.getline(input_buffer, 250);
-	value_array* char_array = new value_array(strlen(input_buffer));
-	for (size_t i = 0; i < char_array->size; i++)
-	{
-		char_array->collection[i] = new unique_refrence(new value(input_buffer[i]), nullptr, parent_context);
-	}
-	return new value(VALUE_TYPE_ARRAY, char_array);
+	value* toret = new value(input_buffer);
+	delete[] input_buffer;
+	return toret;
 }
 
 void write(value_array* args)
