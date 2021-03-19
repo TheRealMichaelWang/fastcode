@@ -1,9 +1,12 @@
-# fastcode
-A perfect blend of C, Java, and Python tailored for those who desire a simple yet powerful programming language.
+# Fastcode
+A perfect blend of C, Java, and Python tailored for those who desire a simple yet powerful programming language. FastCode is a procedural/structural, dynamically typed, and iterpreted programming language that doesn't excessivley consume memory or CPU time. It's perfectly suited for being used as an extension language as well as a general purpose language. 
 
 Click [here](https://github.com/TheRealMichaelWang/fastcode/raw/main/fastcode.exe) to download.
 
-Here's an example (fizzbuzz).
+# Rationale
+FastCode grabs the best features of Python, Java, and C and leaves the worst out.
+
+# examples
 ```
 proc range(n) {
   range = array(n)
