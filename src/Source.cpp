@@ -163,8 +163,8 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				//delete arg_dat;
 			}
 			unique_refrence* toret = execute(to_execute, prototype->body);
+			toret->context_check(to_execute->context);
 			if (!toret->is_root_refrence()) {
-				toret->context_check(to_execute->context);
 				if (toret->parent_context == nullptr) {
 					unique_refrence* parent = toret;
 					toret = toret->parent_refrence;
@@ -174,7 +174,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			}
 			for (size_t i = 0; i < prototype->params->size; i++)
 			{
-				if (!to_execute->context->collection[i]->unique_ref->is_root_refrence()) {
+				if (to_execute->context->collection[i]->unique_ref->parent_context != to_execute->context) {
 					to_execute->context->collection[i]->unique_ref->context_check(to_execute->context);
 					to_execute->context->collection[i]->unique_ref->replaceNullContext(context);
 				}
@@ -320,6 +320,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				unique_refrence* val_ptr = getValue(call_frame->context, ret_tok->ret_tok, false);
 				return_value->set_var_ptr(val_ptr->get_var_ptr());
 				if (val_ptr->is_root_refrence()) {
+					val_ptr->replaceNullContext(call_frame->context);
 					val_ptr->parent_refrence = return_value;
 				}
 				else {
