@@ -57,9 +57,10 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions);
 
 static std::map<char*, function_prototype*, CompareIdentifiers>* functionDefinitions;
 static std::map<char*, struct_prototype*, CompareIdentifiers>* structDefinitions;
-static std::set<char*, CompareIdentifiers>* importSet;
+static std::set<unsigned long>* importSet;
 static std::stack<token_set*>* importedTokens;
 static var_context* static_context;
+static token* last_tok;
 static bool req_exit;
 
 //bool can_delete(var_context* context, value* var_ptr)
@@ -281,6 +282,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 	for (int current_instruction = 0; current_instruction < instructions->size; current_instruction++)
 	{
 		token* current_token = instructions->tokens[current_instruction];
+		last_tok = current_token;
 		switch (current_token->type)
 		{
 		case TOK_SET_VARIABLE: {
@@ -446,13 +448,13 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		}
 		case TOK_IMPORT: {
 			import_token* import_tok = (import_token*)current_token;
-			if (importSet->count(import_tok->path)) {
+			if (importSet->count(file_path_hash(import_tok->path))) {
 				break;
 			}
 			std::ifstream infile;
 			infile.open(import_tok->path, std::ifstream::binary);
 			if (infile.is_open()) {
-				importSet->insert(import_tok->path);
+				importSet->insert(file_path_hash(import_tok->path));
 				infile.seekg(0, std::ios::end);
 				int buffer_length = infile.tellg();
 				infile.seekg(0, std::ios::beg);
@@ -467,7 +469,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				}
 				catch (int error) {
 					error_info(error);
-					std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+					std::cout << " Occured at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
 				}
 				delete lexer;
 				delete[] buffer;
@@ -531,9 +533,10 @@ int main(int argc, char** argv)
 	req_exit = false;
 	functionDefinitions = new std::map<char*, function_prototype*, CompareIdentifiers>();
 	structDefinitions = new std::map<char*, struct_prototype*, CompareIdentifiers>();
-	importSet = new std::set<char*, CompareIdentifiers>();
+	importSet = new std::set<unsigned long>();
 	importedTokens = new std::stack<token_set*>();
 	static_context = new var_context(nullptr);
+	last_tok = nullptr;
 	if (argc > 1)
 	{
 		std::ifstream infile;
@@ -554,13 +557,13 @@ int main(int argc, char** argv)
 			}
 			catch (int error) {
 				error_info(error);
-				std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+				std::cout << " Occured at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
 			}
 			delete lexer;
 			delete[] buffer;
 
 			if (tokens != nullptr) {
-				importSet->insert(argv[1]);
+				importSet->insert(file_path_hash(argv[1]));
 				call_frame* main_frame = new call_frame(tokens);
 				try {
 					delete execute(main_frame, tokens);
@@ -568,6 +571,11 @@ int main(int argc, char** argv)
 				catch (int e){
 					std::cout << std::endl;
 					error_info(e);
+					if (last_tok != nullptr) {
+						std::cout << " Occured at" << std::endl;
+						print_token(last_tok);
+						std::cout << std::endl << "NOTE: Debug output is ONLY meant for DIAGNOSTIC purposes, NOT source editing purposes.";
+					}
 				}
 				delete main_frame;
 				delete tokens;
@@ -611,7 +619,7 @@ int main(int argc, char** argv)
 			}
 			catch (int error) {
 				error_info(error);
-				std::cout << " at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+				std::cout << " Occured at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
 			}
 			delete lexer;
 			delete[] block;
@@ -627,6 +635,11 @@ int main(int argc, char** argv)
 				{
 					std::cout << std::endl;
 					error_info(e);
+					if (last_tok != nullptr) {
+						std::cout << " Occured at" << std::endl;
+						print_token(last_tok);
+						std::cout << std::endl << "NOTE: Debug output is ONLY meant for DIAGNOSTIC purposes, NOT source editing purposes.";
+					}
 				}
 				main_frame->isFinished = false;
 				std::cout << std::endl;

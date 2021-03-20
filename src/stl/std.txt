@@ -1,4 +1,4 @@
-import "math.txt"
+import "math/stdmath.txt"
 
 global alphanum_chars = "0123456789"
 

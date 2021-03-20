@@ -250,7 +250,7 @@ token* lexer::readNextToken()
 			readChar(); readChar(); return new token(TOK_EQUALS);
 		}
 		else if (Peek() == '>') {
-			readChar(); readChar(); return new token(TOK_QUICK_RETURN);
+			readChar(); readChar(); return new token(TOK_QUICK_BLOCK);
 		}
 		readChar(); return new token(TOK_SET);
 	case '!':
@@ -440,7 +440,7 @@ token_set* lexer::tokenize()
 				tok_set->push(function_prototype);
 				last_tok = readNextToken();
 			}
-			else if (last_tok->type == TOK_QUICK_RETURN) {
+			else if (last_tok->type == TOK_QUICK_BLOCK) {
 				delete last_tok;
 				last_tok = readNextToken();
 				token_set* body = new token_set();
@@ -492,7 +492,7 @@ token_set* lexer::tokenize()
 				body = tokenize();
 				last_tok = readNextToken();
 			}
-			else if (last_tok->type == TOK_QUICK_RETURN) {
+			else if (last_tok->type == TOK_QUICK_BLOCK) {
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();
@@ -517,7 +517,7 @@ token_set* lexer::tokenize()
 				body = tokenize();
 				last_tok = readNextToken();
 			}
-			else if (last_tok->type == TOK_QUICK_RETURN) {
+			else if (last_tok->type == TOK_QUICK_BLOCK) {
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();
@@ -551,7 +551,7 @@ token_set* lexer::tokenize()
 				body = tokenize();
 				last_tok = readNextToken();
 			}
-			else if (last_tok->type == TOK_QUICK_RETURN) {
+			else if (last_tok->type == TOK_QUICK_BLOCK) {
 				delete last_tok;
 				last_tok = readNextToken();
 				body = new token_set();

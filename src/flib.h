@@ -14,8 +14,7 @@ value* newArray(value_array* args, var_context* parent_context);
 //general extensions
 int block_checksum(char* line);
 void str_append(char* to_append, const char* append_with);
-
-char* read_file(const char* filepath);
+unsigned long file_path_hash(char* path);
 
 #define FLIB_H
 
