@@ -20,6 +20,7 @@ Since FastCode is modeled off of the read-execute-print-loop idea, one can dynam
 Since FastCode is written in C++, it can be easily be used in your C/C++ project and it can easily be ported to any machine, so long as you have the correct toolchain. 
 
 # Some Examples
+FizzBuzz
 ```
 proc range(n) {
   range = array(n)
@@ -38,5 +39,23 @@ for i in range(100) {
   if i % 3 == 0 {
     print("buzz")
   }
+}
+```
+Fibonacci(Recursive Brute Force)
+```
+proc fibonacci(n) {
+  if n == 0 or n == 1 {
+    return n
+  }
+  return fibonacci(n - 1) + fibonacci(n - 2)
+}
+```
+Factorial(Recursive Brute Force)
+```
+proc fact(n) {
+  if n == 0 {
+    return 1
+  }
+  return n * fact(n - 1)
 }
 ```
