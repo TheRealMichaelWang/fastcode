@@ -91,3 +91,15 @@ void str_append(char* to_append, const char* append_with)
 	}
 	to_append[offset + strlen(append_with)] = 0;
 }
+
+unsigned long file_path_hash(char* path) {
+	unsigned long hash = 5381;
+	for (int i = strlen(path) - 1; i >= 0; i--)
+	{
+		if (path[i] == '\\' || path[i] == '/') {
+			break;
+		}
+		hash = ((hash << 5) + hash) + path[i];
+	}
+	return hash;
+}

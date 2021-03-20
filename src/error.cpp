@@ -6,7 +6,7 @@ void error_info(int error)
 	switch (error)
 	{
 	case ERROR_STR_OVERFLOW: {
-		std::cout << "Syntax Error: String Overflow"; break;
+		std::cout << "Syntax Error: String Overflow."; break;
 	}
 	case ERROR_UNRECOGNIZED_CONTROL_SEQ: {
 		std::cout << "Syntax Error: Unrecognized Control Sequence."; break;
@@ -14,10 +14,10 @@ void error_info(int error)
 		std::cout << "Syntax Error: Unexpected End of File."; break;
 	}
 	case ERROR_UNRECOGNIZED_TOK: {
-		std::cout << "Syntax Error: Unrecognized Token"; break;
+		std::cout << "Syntax Error: Unrecognized Token."; break;
 	}
 	case ERROR_UNEXPECTED_TOK: {
-		std::cout << "Syntax Error: Unexpected Token"; break;
+		std::cout << "Syntax Error: Unexpected Token."; break;
 	}
 
 	case ERROR_INDEX_OUT_OF_RANGE: {
@@ -61,7 +61,10 @@ void error_info(int error)
 		std::cout << "Runtime Error: No such identifier corresponds to a static or local variable."; break;
 	}
 	case ERROR_FILE_NOT_FOUND: {
-		std::cout << "Runtime Error: The requested file could not be opened.";
+		std::cout << "Runtime Error: The requested file could not be opened."; break;
+	}
+	case ERROR_IMPORT_SYNTAX_ERR: {
+		std::cout << "Runtime Error: A syntax error occured while importing external code during runtime"; break;
 	}
 	default:
 		std::cout << "Unrecognized Error Type";
