@@ -41,7 +41,7 @@
 #define TOK_MORE 33
 #define TOK_LESS_EQUAL 34
 #define TOK_MORE_EQUAL 35
-#define TOK_QUICK_RETURN 36
+#define TOK_QUICK_BLOCK 36
 #define TOK_OR 37
 #define TOK_AND 38
 #define TOK_NOT 39
@@ -65,6 +65,7 @@
 struct token
 {
 public:
+	token* next_tok;
 	char type;
 	token(char type);
 	token();
@@ -73,15 +74,12 @@ public:
 class token_set
 {
 public:
-	token** tokens;
-	int size;
+	unsigned int size;
+	token* head;
+	token* tail;
 	token_set();
 	~token_set();
 	void push(token* tok);
-	token* top();
-private:
-	int allocated_size;
-	void extend(int n);
 };
 
 struct value_token : public token
@@ -240,5 +238,6 @@ public:
 void generic_destroy_token(token* tok);
 bool is_op_token(char tok_type);
 char get_op_prior(char op); //returns the operator priority in PEMDAS
+void print_token(token* token);
 
 #endif TOKEN_H

@@ -543,10 +543,11 @@ structure::structure(class struct_prototype* prototype, var_context* parent_cont
 {
 	this->identifier = prototype->identifier->identifier;
 	this->properties = new var_context(parent_context);
-	for (size_t i = 0; i <prototype->properties->size; i++)
-	{
-		identifier_token* prop = (identifier_token*)prototype->properties->tokens[i];
+	struct token* current_tok = prototype->properties->head;
+	while (current_tok != nullptr) {
+		identifier_token* prop = (identifier_token*)current_tok;
 		properties->declare(prop->identifier, new unique_refrence(new value(), nullptr, parent_context));
+		current_tok = current_tok->next_tok;
 	}
 }
 

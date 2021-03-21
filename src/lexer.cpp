@@ -528,7 +528,7 @@ token_set* lexer::tokenize()
 			}
 
 			//load and check previous conditional
-			conditional_token* conditional = (conditional_token*)tok_set->top();
+			conditional_token* conditional = (conditional_token*)tok_set->tail;
 			while (conditional->next_condition != nullptr)
 			{
 				if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)
@@ -563,7 +563,7 @@ token_set* lexer::tokenize()
 
 			if (body->size > 0) { //check is body size is greater than zero
 				//load and check previous conditional
-				conditional_token* conditional = (conditional_token*)tok_set->top();
+				conditional_token* conditional = (conditional_token*)tok_set->tail;
 				while (conditional->next_condition != nullptr)
 				{
 					if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)

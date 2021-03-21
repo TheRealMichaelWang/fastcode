@@ -125,9 +125,16 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	case TOK_CREATE_ARRAY: {
 		create_array* new_array_req = (create_array*)token;
 		value_array* array = new value_array(new_array_req->items->size);
-		for (size_t i = 0; i < new_array_req->items->size; i++)
+		/*for (size_t i = 0; i < new_array_req->items->size; i++)
 		{
 			array->collection[i] = getValue(context, new_array_req->items->tokens[i], false);
+		}*/
+		struct token* current_tok = new_array_req->items->head;
+		unsigned int i = 0;
+		while (current_tok != nullptr)
+		{
+			array->collection[i++] = getValue(context, current_tok, false);
+			current_tok = current_tok->next_tok;
 		}
 		return new unique_refrence(new value(VALUE_TYPE_ARRAY, array), nullptr, nullptr);
 	}
@@ -140,10 +147,35 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				throw ERROR_UNEXPECTED_ARGUMENT_LENGTH;
 			}
 			call_frame* to_execute = new call_frame(prototype->body);
-			for (size_t i = 0; i < prototype->params->size; i++)
+			//for (size_t i = 0; i < prototype->params->size; i++)
+			//{
+			//	identifier_token* param = (identifier_token*)prototype->params->tokens[i];
+			//	unique_refrence* arg_dat = getValue(context, func_call->arguments->tokens[i], true);
+			//	if (arg_dat->is_root_refrence()) {
+			//		arg_dat->replaceNullContext(to_execute->context);
+			//		to_execute->context->declare(param->identifier, arg_dat);
+			//	}
+			//	else {
+			//		to_execute->context->declare(param->identifier, arg_dat->parent_refrence);
+			//		delete arg_dat;
+			//	}
+			//	//unique_refrence* arg = to_execute->context->declare(param->identifier, new unique_refrence(arg_dat->get_var_ptr(), arg_dat, to_execute->context));
+			//	////arg->set_var_ptr(arg_dat->get_var_ptr());
+			//	//arg->replaceNullContext(to_execute->context);
+			//	///*if (arg_dat->is_root_refrence()) {
+			//	//	arg_dat->parent_refrence = arg;
+			//	//}
+			//	//else {
+			//	//	arg->change_refrence(arg_dat->parent_refrence);
+			//	//}*/
+			//	//delete arg_dat;
+			//}
+			struct token* current_param_tok = prototype->params->head;
+			struct token* current_arg_tok = func_call->arguments->head;
+			while (current_param_tok != nullptr)
 			{
-				identifier_token* param = (identifier_token*)prototype->params->tokens[i];
-				unique_refrence* arg_dat = getValue(context, func_call->arguments->tokens[i], true);
+				identifier_token* param = (identifier_token*)current_param_tok;
+				unique_refrence* arg_dat = getValue(context, current_arg_tok, true);
 				if (arg_dat->is_root_refrence()) {
 					arg_dat->replaceNullContext(to_execute->context);
 					to_execute->context->declare(param->identifier, arg_dat);
@@ -152,16 +184,8 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 					to_execute->context->declare(param->identifier, arg_dat->parent_refrence);
 					delete arg_dat;
 				}
-				//unique_refrence* arg = to_execute->context->declare(param->identifier, new unique_refrence(arg_dat->get_var_ptr(), arg_dat, to_execute->context));
-				////arg->set_var_ptr(arg_dat->get_var_ptr());
-				//arg->replaceNullContext(to_execute->context);
-				///*if (arg_dat->is_root_refrence()) {
-				//	arg_dat->parent_refrence = arg;
-				//}
-				//else {
-				//	arg->change_refrence(arg_dat->parent_refrence);
-				//}*/
-				//delete arg_dat;
+				current_param_tok = current_param_tok->next_tok;
+				current_arg_tok = current_arg_tok->next_tok;
 			}
 			unique_refrence* toret = execute(to_execute, prototype->body);
 			toret->context_check(to_execute->context);
@@ -185,9 +209,17 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		}
 		else {
 			value_array* arguments = new value_array(func_call->arguments->size);
-			for (size_t i = 0; i < func_call->arguments->size; i++)
+			/*for (size_t i = 0; i < func_call->arguments->size; i++)
 			{
 				arguments->collection[i] = getValue(context, func_call->arguments->tokens[i], true);
+			}*/
+
+			struct token* current_tok = func_call->arguments->head;
+			unsigned int i = 0;
+			while (current_tok != nullptr)
+			{
+				arguments->collection[i++] = getValue(context, current_tok, true);
+				current_tok = current_tok->next_tok;
 			}
 
 			value* toret;
@@ -243,11 +275,12 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 		throw ERROR_NOT_IN_VAR_CONTEXT;
 	}
 	if (identifier->hasModifiers()) {
-		for (size_t i = 0; i < identifier->modifiers->size; i++)
+		token* current_tok = identifier->modifiers->head;
+		while(current_tok != nullptr)
 		{
-			if (identifier->modifiers->tokens[i]->type == TOK_PROPERTY)
+			if (current_tok->type == TOK_PROPERTY)
 			{
-				property_token* prop = (property_token*)identifier->modifiers->tokens[i];
+				property_token* prop = (property_token*)current_tok;
 				if (value->get_var_ptr()->type != VALUE_TYPE_STRUCT)
 				{
 					throw ERROR_MUST_HAVE_STRUCT_TYPE;
@@ -255,9 +288,9 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 				structure* structure = (class structure*)value->get_var_ptr()->ptr;
 				value = structure->properties->searchForVal(prop->property_identifier);
 			}
-			else if (identifier->modifiers->tokens[i]->type == TOK_INDEX)
+			else if (current_tok->type == TOK_INDEX)
 			{
-				indexer_token* indexer = (indexer_token*)identifier->modifiers->tokens[i];
+				indexer_token* indexer = (indexer_token*)current_tok;
 				unique_refrence* index = getValue(context, indexer->index, false);
 				if (index->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
 				{
@@ -271,6 +304,7 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 				value = value->get_var_ptr()->iterate(i_index);
 				delete index;
 			}
+			current_tok = current_tok->next_tok;
 		}
 	}
 	return value;
@@ -279,9 +313,9 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 {
 	unique_refrence* return_value = new unique_refrence(new value(), nullptr, nullptr);
-	for (int current_instruction = 0; current_instruction < instructions->size; current_instruction++)
+	token* current_token = instructions->head;
+	while(current_token != nullptr)
 	{
-		token* current_token = instructions->tokens[current_instruction];
 		last_tok = current_token;
 		switch (current_token->type)
 		{
@@ -519,6 +553,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		{
 			goto escape;
 		}
+		current_token = current_token->next_tok;
 	}
 
 escape:
