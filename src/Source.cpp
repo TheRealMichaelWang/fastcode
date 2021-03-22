@@ -172,6 +172,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			//}
 			struct token* current_param_tok = prototype->params->head;
 			struct token* current_arg_tok = func_call->arguments->head;
+			var_node* param_begin_node = nullptr;
 			while (current_param_tok != nullptr)
 			{
 				identifier_token* param = (identifier_token*)current_param_tok;
@@ -184,6 +185,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 					to_execute->context->declare(param->identifier, arg_dat->parent_refrence);
 					delete arg_dat;
 				}
+				param_begin_node = to_execute->context->head;
 				current_param_tok = current_param_tok->next_tok;
 				current_arg_tok = current_arg_tok->next_tok;
 			}
@@ -197,13 +199,23 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				}
 				toret->replaceNullContext(context);
 			}
-			for (size_t i = 0; i < prototype->params->size; i++)
+			/*for (size_t i = 0; i < prototype->params->size; i++)
 			{
 				if (to_execute->context->collection[i]->unique_ref->parent_context != to_execute->context) {
 					to_execute->context->collection[i]->unique_ref->context_check(to_execute->context);
 					to_execute->context->collection[i]->unique_ref->replaceNullContext(context);
 				}
+			}*/
+
+			while (param_begin_node != nullptr)
+			{
+				if (param_begin_node->unique_ref->parent_context != to_execute->context) {
+					param_begin_node->unique_ref->context_check(to_execute->context);
+					param_begin_node->unique_ref->replaceNullContext(context);
+				}
+				param_begin_node = param_begin_node->next;
 			}
+
 			delete to_execute;
 			return toret;
 		}

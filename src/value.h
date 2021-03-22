@@ -34,8 +34,6 @@ public:
 	value* clone();
 	value* shallowClone();
 	double compare(value* value);
-	bool contains(value* key);
-	bool check_delete(value* to_delete);
 	//bool has_val_ptr(value* val_ptr);
 };
 
@@ -86,34 +84,56 @@ public:
 	structure* shallowClone(bool take_ownership = true);
 };
 
-class variable
-{
+class var_node {
 public:
-	char* identifier;
 	unique_refrence* unique_ref;
-	variable(char* identifier, class value* value, var_context* parent_context);
-	variable(char* identifier, unique_refrence* unique_ref);
-	variable();
-	~variable();
+	var_node* next;
+	unsigned long hash_id;
+	var_node(unsigned long hash_id, unique_refrence* unique_ref);
+	~var_node();
 };
 
-class var_context
-{
-private:
-	int allocated_size;
-	void extend(int n);
+class var_context {
 public:
 	var_context* parent_context;
-	variable** collection;
-	int size;
+	var_node* head;
 	var_context(var_context* parent_context);
 	~var_context();
 	unique_refrence* declare(char* identifier, unique_refrence* value);
+	unique_refrence* declare(unsigned long hash, unique_refrence* value);
 	void remove(char* identifier);
 	unique_refrence* searchForVal(char* identifier);
 	bool has_val(char* identifier);
-	//bool has_val_ptr(value* val_ptr);
 };
+
+//class variable
+//{
+//public:
+//	char* identifier;
+//	unique_refrence* unique_ref;
+//	variable(char* identifier, class value* value, var_context* parent_context);
+//	variable(char* identifier, unique_refrence* unique_ref);
+//	variable();
+//	~variable();
+//};
+//
+//class var_context
+//{
+//private:
+//	int allocated_size;
+//	void extend(int n);
+//public:
+//	var_context* parent_context;
+//	variable** collection;
+//	int size;
+//	var_context(var_context* parent_context);
+//	~var_context();
+//	unique_refrence* declare(char* identifier, unique_refrence* value);
+//	void remove(char* identifier);
+//	unique_refrence* searchForVal(char* identifier);
+//	bool has_val(char* identifier);
+//	//bool has_val_ptr(value* val_ptr);
+//};
 
 //class refrence_outflow {
 //private:

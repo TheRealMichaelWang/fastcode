@@ -5,11 +5,13 @@
 token::token(char type)
 {
 	this->type = type;
+	this->next_tok = nullptr;
 }
 
 token::token()
 {
 	this->type = 255;
+	this->next_tok = nullptr;
 }
 
 token_set::token_set()
@@ -21,7 +23,13 @@ token_set::token_set()
 
 token_set::~token_set()
 {
-
+	token* current_node = head;
+	while (current_node != nullptr)
+	{
+		token* to_delete = current_node;
+		current_node = current_node->next_tok;
+		generic_destroy_token(to_delete);
+	}
 }
 
 void token_set::push(token* tok) {

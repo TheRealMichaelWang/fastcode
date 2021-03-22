@@ -103,3 +103,12 @@ unsigned long file_path_hash(char* path) {
 	}
 	return hash;
 }
+
+unsigned long dj2b(char* path) {
+	unsigned long hash = 5381;
+	for (int i = strlen(path) - 1; i >= 0; i--)
+	{
+		hash = ((hash << 5) + hash) + path[i];
+	}
+	return hash;
+}

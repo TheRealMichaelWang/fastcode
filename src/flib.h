@@ -15,6 +15,7 @@ value* newArray(value_array* args, var_context* parent_context);
 int block_checksum(char* line);
 void str_append(char* to_append, const char* append_with);
 unsigned long file_path_hash(char* path);
+unsigned long dj2b(char* identifier);
 
 #define FLIB_H
 
