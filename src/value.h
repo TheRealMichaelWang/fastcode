@@ -34,8 +34,6 @@ public:
 	value* clone();
 	value* shallowClone();
 	double compare(value* value);
-	bool contains(value* key);
-	bool check_delete(value* to_delete);
 	//bool has_val_ptr(value* val_ptr);
 };
 
@@ -44,6 +42,7 @@ public:
 	var_context* parent_context;
 	unique_refrence* parent_refrence;
 	value* value_ptr;
+	unsigned int refrences;
 	unique_refrence(value* value_ptr, unique_refrence* parent_refrence, var_context* parent_context);
 	~unique_refrence();
 	bool is_root_refrence();
@@ -53,7 +52,7 @@ public:
 	bool context_check(var_context* delete_context);
 	void replaceNullContext(var_context* new_context);
 private:
-	unique_refrence* refrence_check(unique_refrence* new_parent_refrence);
+	unique_refrence* refrence_correct(unique_refrence* new_parent_refrence);
 };
 
 class value_array
@@ -81,51 +80,32 @@ public:
 	structure(class struct_prototype* prototype, var_context* parent_context);
 	structure(char* identifier, var_context* parent_context);
 	~structure();
-	int compare(structure* tocomp);
 	structure* clone();
 	structure* shallowClone(bool take_ownership = true);
 };
 
-class variable
-{
+class var_node {
 public:
-	char* identifier;
 	unique_refrence* unique_ref;
-	variable(char* identifier, class value* value, var_context* parent_context);
-	variable(char* identifier, unique_refrence* unique_ref);
-	variable();
-	~variable();
+	var_node* next;
+	unsigned long hash_id;
+	var_node(unsigned long hash_id, unique_refrence* unique_ref);
+	~var_node();
 };
 
-class var_context
-{
-private:
-	int allocated_size;
-	void extend(int n);
+class var_context {
 public:
 	var_context* parent_context;
-	variable** collection;
-	int size;
+	var_node* head;
 	var_context(var_context* parent_context);
 	~var_context();
 	unique_refrence* declare(char* identifier, unique_refrence* value);
+	unique_refrence* declare(unsigned long hash, unique_refrence* value);
+	unique_refrence* push_refrence(unique_refrence* refrence);
 	void remove(char* identifier);
 	unique_refrence* searchForVal(char* identifier);
 	bool has_val(char* identifier);
-	//bool has_val_ptr(value* val_ptr);
 };
-
-//class refrence_outflow {
-//private:
-//	int allocated_size;
-//	void extend(int n);
-//public:
-//	int size;
-//	unique_refrence** references;
-//	refrence_outflow();
-//	~refrence_outflow();
-//	void push(unique_refrence* refrence);
-//};
 
 value* applyUniaryOp(char type, unique_refrence* value);
 value* applyBinaryOp(char type, unique_refrence* a, unique_refrence* b);

@@ -1,30 +1,48 @@
+#include <iostream>
 #include "error.h"
 #include "token.h"
 
 token::token(char type)
 {
 	this->type = type;
+	this->next_tok = nullptr;
 }
 
 token::token()
 {
 	this->type = 255;
+	this->next_tok = nullptr;
 }
 
 token_set::token_set()
 {
-	this->allocated_size = 5;
-	this->tokens = new token * [allocated_size];
-	this->size = 0;
+	tail = nullptr;
+	head = nullptr;
+	size = 0;
 }
 
 token_set::~token_set()
 {
-	for (size_t i = 0; i < size; i++)
+	token* current_node = head;
+	while (current_node != nullptr)
 	{
-		generic_destroy_token(tokens[i]);
+		token* to_delete = current_node;
+		current_node = current_node->next_tok;
+		generic_destroy_token(to_delete);
 	}
-	delete[] tokens;
+}
+
+void token_set::push(token* tok) {
+	if (tail == nullptr && head == nullptr) {
+		head = tok;
+		tail = tok;
+	}
+	else {
+		tail->next_tok = tok;
+		tail = tail->next_tok;
+	}
+	tail->next_tok = nullptr;
+	size++;
 }
 
 void generic_destroy_token(token* token)
@@ -135,33 +153,6 @@ void generic_destroy_token(token* token)
 		delete token;
 	}
 	}
-}
-
-
-void token_set::push(token* tok)
-{
-	if (size == allocated_size)
-	{
-		extend(5);
-	}
-	tokens[size++] = tok;
-}
-
-void token_set::extend(int n)
-{
-	token** old_toks = tokens;
-	tokens = new token * [allocated_size + n];
-	allocated_size += n;
-	for (size_t i = 0; i < size; i++)
-	{
-		tokens[i] = old_toks[i];
-	}
-	delete[] old_toks;
-}
-
-token* token_set::top()
-{
-	return tokens[size - 1];
 }
 
 value_token::value_token(class value* value) : token(TOK_VALUE)
@@ -406,4 +397,217 @@ char get_op_prior(char op)
 		return 4;
 	}
 	throw ERROR_UNEXPECTED_TOK;
+}
+
+void print_op(char op) {
+	switch (op)
+	{
+	case TOK_OR: std::cout << "or"; break;
+	case TOK_AND: std::cout << "and"; break;
+	case TOK_EQUALS: std::cout << "=="; break;
+	case TOK_NOT_EQUAL: std::cout << "!="; break;
+	case TOK_LESS: std::cout << '<'; break;
+	case TOK_MORE: std::cout << '>'; break;
+	case TOK_MORE_EQUAL: std::cout << ">="; break;
+	case TOK_LESS_EQUAL: std::cout << "<="; break;
+	case TOK_PLUS: std::cout << '+'; break;
+	case TOK_MINUS: std::cout << '-'; break;
+	case TOK_ASTERISK: std::cout << '*'; break;
+	case TOK_SLASH: std::cout << '/'; break;
+	case TOK_MODULOUS: std::cout << '%'; break;
+	case TOK_CARET: std::cout << '^'; break;
+	case TOK_INCRIMENT: std::cout << "++"; break;
+	case TOK_DECRIMENT: std::cout << "--"; break;
+	case TOK_NOT: std::cout << "!"; break;
+	}
+}
+
+void print_body(token_set* body) {
+	std::cout << '{';
+	token* current_tok = body->head;
+	while (current_tok !=nullptr)
+	{
+		std::cout << std::endl << '\t';
+		print_token(current_tok);
+		current_tok = current_tok->next_tok;
+	}
+	std::cout << std::endl << '}';
+}
+
+void print_token(token* token) {
+	switch (token->type)
+	{
+	case TOK_VALUE: {
+		value_token* tok = (value_token*)token;
+		tok->value->print();
+		break;
+	}
+	case TOK_IDENTIFIER: {
+		identifier_token* tok = (identifier_token*)token;
+		std::cout << tok->identifier;
+		if (tok->hasModifiers()) {
+			struct token* current_tok = tok->modifiers->head;
+			while (current_tok != nullptr)
+			{
+				print_token(current_tok->next_tok);
+			}
+		}
+		break;
+	}
+	case TOK_SET_VARIABLE: {
+		set_variable_token* tok = (set_variable_token*)token;
+		print_token(tok->identifier);
+		std::cout << " = ";
+		print_token(tok->set_tok);
+		break;
+	}
+	case TOK_CALL_FUNCTION: {
+		function_call_token* tok = (function_call_token*)token;
+		print_token(tok->identifier);
+		std::cout << '(';
+		struct token* current_tok = tok->arguments->head;
+		while (current_tok != nullptr)
+		{
+			if (current_tok != tok->arguments->head) {
+				std::cout << ", ";
+			}
+			print_token(current_tok);
+			current_tok = current_tok->next_tok;
+		}
+		std::cout << ") ";
+		break;
+	}
+	case TOK_FUNCTION_PROTO: {
+		function_prototype* tok = (function_prototype*)token;
+		print_token(tok->identifier);
+		std::cout << '(';
+		struct token* current_tok = tok->params->head;
+		while (current_tok != nullptr)
+		{
+			if (current_tok != tok->params->head) {
+				std::cout << ", ";
+			}
+			print_token(current_tok);
+			current_tok = current_tok->next_tok;
+		}
+		std::cout << ") ";
+		print_body(tok->body);
+		break;
+	}
+	case TOK_STRUCT_PROTO: {
+		struct_prototype* tok = (struct_prototype*)token;
+		print_token(tok->identifier);
+		print_body(tok->properties);
+		break;
+	}
+	case TOK_PROPERTY: {
+		property_token* tok = (property_token*)token;
+		std::cout << '.' << tok->property_identifier;
+		break;
+	}
+	case TOK_INDEX: {
+		indexer_token* tok = (indexer_token*)token;
+		std::cout << '[';
+		print_token(tok->index);
+		std::cout << ']';
+		break;
+	}
+	case TOK_UNIARY_OP: {
+		uniary_operator_token* tok = (uniary_operator_token*)token;
+		print_op(tok->op_type);
+		print_token(tok->value);
+		break;
+	}
+	case TOK_BINARY_OP: {
+		binary_operator_token* tok = (binary_operator_token*)token;
+		std::cout << '(';
+		print_token(tok->left);
+		std::cout << ' ';
+		print_op(tok->op_type);
+		std::cout << ' ';
+		print_token(tok->right);
+		std::cout << ')';
+		break;
+	}
+	case TOK_IF: {
+		conditional_token* tok = (conditional_token*)token;
+		std::cout << "IF ";
+		print_token(tok->condition);
+		std::cout << ' ';
+		print_body(tok->instructions);
+		if (tok->next_condition != nullptr) {
+			std::cout << std::endl;
+			print_token(tok->next_condition);
+		}
+		break;
+	}
+	case TOK_ELIF: {
+		conditional_token* tok = (conditional_token*)token;
+		std::cout << "ELIF ";
+		print_token(tok->condition);
+		std::cout << ' ';
+		print_body(tok->instructions);
+		if (tok->next_condition != nullptr) {
+			std::cout << std::endl;
+			print_token(tok->next_condition);
+		}
+		break;
+	}
+	case TOK_ELSE: {
+		conditional_token* tok = (conditional_token*)token;
+		std::cout << "ELSE ";
+		print_body(tok->instructions);
+		break;
+	}
+	case TOK_WHILE: {
+		conditional_token* tok = (conditional_token*)token;
+		std::cout << "WHILE ";
+		print_token(tok->condition);
+		std::cout << ' ';
+		print_body(tok->instructions);
+		break;
+	}
+	case TOK_FOR: {
+		for_token* tok = (for_token*)token;
+		std::cout << "FOR ";
+		print_token(tok->iterator_identifier);
+		std::cout << " IN ";
+		print_token(tok->to_iterate);
+		std::cout << ' ';
+		print_body(tok->instructions);
+		break;
+	}
+	case TOK_NEW_STRUCT: {
+		create_struct* tok = (create_struct*)token;
+		std::cout << "NEW ";
+		print_token(tok->identifier);
+		break;
+	}
+	case TOK_CREATE_ARRAY: {
+		create_array* tok = (create_array*)token;
+		std::cout << '[';
+		struct token* current_tok = tok->items->head;
+		while (current_tok != nullptr)
+		{
+			if (current_tok != tok->items->head) {
+				std::cout << ", ";
+			}
+			print_token(current_tok);
+			current_tok = current_tok->next_tok;
+		}
+		std::cout << ']';
+		break;
+	}
+	case TOK_REFRENCE: {
+		refrence_token* tok = (refrence_token*)token;
+		std::cout << "REF ";
+		print_token(tok->value);
+		break;
+	}
+	case TOK_IMPORT: {
+		import_token* tok = (import_token*)token;
+		std::cout << "IMPORT \"" << tok->path << '\"';
+		break;
+	}
+	}
 }

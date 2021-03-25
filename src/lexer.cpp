@@ -1,9 +1,9 @@
 #include <ctype.h>
 #include <iostream>
-#include <string.h>
 #include "error.h"
 #include "token.h"
 #include "lexer.h"
+#include "flib.h"
 
 #define EndOfFile 0
 
@@ -72,72 +72,73 @@ token* lexer::readNextToken()
 			identifier[i++] = last_char;
 		}
 		identifier[i++] = EndOfFile;
-		if (strcmp(identifier, "and") == 0) {
+		unsigned long id_hash = dj2b(identifier);
+		if (id_hash == 193489624) {
 			delete[] identifier; return new token(TOK_AND);
 		}
-		else if (strcmp(identifier, "not") == 0) {
+		else if (id_hash == 193507094) {
 			delete[] identifier; return new token(TOK_NOT);
 		}
-		else if (strcmp(identifier, "or") == 0) {
+		else if (id_hash == 5863782) {
 			delete[] identifier; return new token(TOK_OR);
 		}
-		else if (strcmp(identifier, "in") == 0) {
+		else if (id_hash == 5863644) {
 			delete[] identifier; return new token(TOK_IN);
 		}
-		else if (strcmp(identifier, "if") == 0) {
+		else if (id_hash == 5863380) {
 			delete[] identifier; return new token(TOK_IF);
 		}
-		else if (strcmp(identifier, "else") == 0) {
+		else if (id_hash == 2090232142) {
 			delete[] identifier; return new token(TOK_ELSE);
 		}
-		else if (strcmp(identifier, "elif") == 0) {
+		else if (id_hash == 2090257189) {
 			delete[] identifier; return new token(TOK_ELIF);
 		}
-		else if (strcmp(identifier, "for") == 0) {
+		else if (id_hash == 193504908) {
 			delete[] identifier; return new token(TOK_FOR);
 		}
-		else if (strcmp(identifier, "while") == 0) {
+		else if (id_hash == 257929342) {
 			delete[] identifier; return new token(TOK_WHILE);
 		}
-		else if (strcmp(identifier, "function") == 0 || strcmp(identifier, "procedure") ==0 || strcmp(identifier, "proc") == 0) {
+		else if (id_hash == 2090156121 || id_hash == 998468366 || id_hash == 1574308811) {
 			delete[] identifier; return new token(TOK_FUNCTION);
 		}
-		else if (strcmp(identifier, "struct") == 0 || strcmp(identifier, "record") == 0) {
+		else if (id_hash == 498533450 || id_hash == 4184890820) {
 			delete[] identifier; return new token(TOK_STRUCT);
 		}
-		else if (strcmp(identifier, "break") == 0) {
+		else if (id_hash == 264645514) {
 			delete[] identifier; return new token(TOK_BREAK);
 		}
-		else if (strcmp(identifier, "return") == 0) {
+		else if (id_hash == 281511589) {
 			delete[] identifier; return new token(TOK_RETURN);
 		}
-		else if (strcmp(identifier, "import") == 0) {
+		else if (id_hash == 516104224) {
 			delete[] identifier; return new token(TOK_IMPORT);
 		}
-		else if (strcmp(identifier, "global") == 0 || strcmp(identifier, "static") == 0) {
+		else if (id_hash == 182392118 || id_hash == 4135260141) {
 			delete[] identifier; return new token(TOK_GLOBAL);
 		}
-		else if (strcmp(identifier, "ref") == 0) {
+		else if (id_hash == 193491522) {
 			delete[] identifier; return new token(TOK_REFRENCE);
 		}
-		else if (strcmp(identifier, "new") == 0) {
+		else if (id_hash == 193510031) {
 			delete[] identifier; return new token(TOK_NEW);
 		}
-		else if (strcmp(identifier, "rem") == 0)
+		else if (id_hash == 193499145)
 		{
 			delete[] identifier;
 			readTillNextLine();
 			return readNextToken();
 		}
-		else if (strcmp(identifier, "true") == 0) {
+		else if (id_hash == 2090234533) {
 			delete[] identifier; 
 			return new value_token(new value(1.0));
 		}
-		else if (strcmp(identifier, "false") == 0) {
+		else if (id_hash == 258183920) {
 			delete[] identifier;
 			return new value_token(new value(0.0));
 		}
-		else if (strcmp(identifier, "null") == 0) {
+		else if (id_hash == 2090476384) {
 			delete[] identifier;
 			return new value_token(new value());
 		}
@@ -528,7 +529,7 @@ token_set* lexer::tokenize()
 			}
 
 			//load and check previous conditional
-			conditional_token* conditional = (conditional_token*)tok_set->top();
+			conditional_token* conditional = (conditional_token*)tok_set->tail;
 			while (conditional->next_condition != nullptr)
 			{
 				if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)
@@ -563,7 +564,7 @@ token_set* lexer::tokenize()
 
 			if (body->size > 0) { //check is body size is greater than zero
 				//load and check previous conditional
-				conditional_token* conditional = (conditional_token*)tok_set->top();
+				conditional_token* conditional = (conditional_token*)tok_set->tail;
 				while (conditional->next_condition != nullptr)
 				{
 					if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)

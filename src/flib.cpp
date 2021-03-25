@@ -79,7 +79,7 @@ int block_checksum(char* line)
 			paren_sum--;
 		}
 	}
-	return brace_sum == bracket_sum == paren_sum == 0;
+	return brace_sum == 0 && bracket_sum == 0 && paren_sum == 0;
 }
 
 void str_append(char* to_append, const char* append_with)
@@ -99,6 +99,15 @@ unsigned long file_path_hash(char* path) {
 		if (path[i] == '\\' || path[i] == '/') {
 			break;
 		}
+		hash = ((hash << 5) + hash) + path[i];
+	}
+	return hash;
+}
+
+unsigned long dj2b(char* path) {
+	unsigned long hash = 5381;
+	for (int i = strlen(path) - 1; i >= 0; i--)
+	{
 		hash = ((hash << 5) + hash) + path[i];
 	}
 	return hash;

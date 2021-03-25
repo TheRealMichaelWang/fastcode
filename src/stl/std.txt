@@ -1,4 +1,4 @@
-import "math/stdmath.txt"
+import "math.txt"
 
 global alphanum_chars = "0123456789"
 
@@ -38,3 +38,16 @@ proc itos(int) {
 	}
 	return str
 }
+
+rem Gets the "range" from 0 to N-1, with a step of 1
+proc stdrange(n) {
+	range = array(n)
+	k = n //remeber, we DONT want to modify n, since it's AUTOMATICALLY passed by reference
+	while k-- {
+		range[k] = k
+	}
+	return range
+}
+
+proc longrange(start, stop, step) {
+	range = array(abs(stop - start) / step)
