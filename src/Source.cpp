@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <stack>
 #include <set>
@@ -55,18 +55,13 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier);
 unique_refrence* getValue(var_context* context, token* token, bool force_refrence);
 unique_refrence* execute(call_frame* call_frame, token_set* instructions);
 
-static std::map<char*, function_prototype*, CompareIdentifiers>* functionDefinitions;
-static std::map<char*, struct_prototype*, CompareIdentifiers>* structDefinitions;
-static std::set<unsigned long>* importSet;
-static std::stack<token_set*>* importedTokens;
-static var_context* static_context;
-static token* last_tok;
-static bool req_exit;
-
-//bool can_delete(var_context* context, value* var_ptr)
-//{
-//	return (context->has_val_ptr(var_ptr) || static_context->has_val_ptr(var_ptr));
-//}
+std::map<char*, function_prototype*, CompareIdentifiers>* functionDefinitions;
+std::map<char*, struct_prototype*, CompareIdentifiers>* structDefinitions;
+std::set<unsigned long>* importSet;
+std::stack<token_set*>* importedTokens;
+var_context* static_context;
+token* last_tok;
+bool req_exit;
 
 unique_refrence* getValue(var_context* context, token* token, bool force_refrence)
 {
@@ -75,7 +70,6 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	case TOK_VALUE:{
 		value_token* val_tok = (value_token*)token;
 		unique_refrence* ref = new unique_refrence(val_tok->value->clone(), nullptr, nullptr);
-		//ref->replaceNullContext(context);
 		return ref;
 	}
 	case TOK_IDENTIFIER:{
@@ -83,11 +77,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		if (var_ptr->get_var_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
 		{
 			return new unique_refrence(var_ptr->get_var_ptr(), var_ptr, nullptr);
-		}/*
-		else if(var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT){
-			structure* shallow_copy = ((structure*)var_ptr->get_var_ptr()->ptr)->shallowClone(false);
-			return new unique_refrence(new value(VALUE_TYPE_STRUCT, shallow_copy), nullptr, nullptr);
-		}*/
+		}
 		return new unique_refrence(var_ptr->get_var_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
@@ -125,10 +115,6 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	case TOK_CREATE_ARRAY: {
 		create_array* new_array_req = (create_array*)token;
 		value_array* array = new value_array(new_array_req->items->size);
-		/*for (size_t i = 0; i < new_array_req->items->size; i++)
-		{
-			array->collection[i] = getValue(context, new_array_req->items->tokens[i], false);
-		}*/
 		struct token* current_tok = new_array_req->items->head;
 		unsigned int i = 0;
 		while (current_tok != nullptr)
@@ -147,29 +133,6 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				throw ERROR_UNEXPECTED_ARGUMENT_LENGTH;
 			}
 			call_frame* to_execute = new call_frame(prototype->body);
-			//for (size_t i = 0; i < prototype->params->size; i++)
-			//{
-			//	identifier_token* param = (identifier_token*)prototype->params->tokens[i];
-			//	unique_refrence* arg_dat = getValue(context, func_call->arguments->tokens[i], true);
-			//	if (arg_dat->is_root_refrence()) {
-			//		arg_dat->replaceNullContext(to_execute->context);
-			//		to_execute->context->declare(param->identifier, arg_dat);
-			//	}
-			//	else {
-			//		to_execute->context->declare(param->identifier, arg_dat->parent_refrence);
-			//		delete arg_dat;
-			//	}
-			//	//unique_refrence* arg = to_execute->context->declare(param->identifier, new unique_refrence(arg_dat->get_var_ptr(), arg_dat, to_execute->context));
-			//	////arg->set_var_ptr(arg_dat->get_var_ptr());
-			//	//arg->replaceNullContext(to_execute->context);
-			//	///*if (arg_dat->is_root_refrence()) {
-			//	//	arg_dat->parent_refrence = arg;
-			//	//}
-			//	//else {
-			//	//	arg->change_refrence(arg_dat->parent_refrence);
-			//	//}*/
-			//	//delete arg_dat;
-			//}
 			struct token* current_param_tok = prototype->params->head;
 			struct token* current_arg_tok = func_call->arguments->head;
 			var_node* param_begin_node = nullptr;
@@ -177,6 +140,9 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			{
 				identifier_token* param = (identifier_token*)current_param_tok;
 				unique_refrence* arg_dat = getValue(context, current_arg_tok, true);
+				if (to_execute->context->has_val(param->identifier)) {
+					throw ERROR_VARIABLE_ALREADY_DEFINED;
+				}
 				if (arg_dat->is_root_refrence()) {
 					arg_dat->replaceNullContext(to_execute->context);
 					to_execute->context->declare(param->identifier, arg_dat);
@@ -190,41 +156,31 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				current_arg_tok = current_arg_tok->next_tok;
 			}
 			unique_refrence* toret = execute(to_execute, prototype->body);
-			toret->context_check(to_execute->context);
-			if (!toret->is_root_refrence()) {
-				if (toret->parent_context == nullptr) {
-					unique_refrence* parent = toret;
-					toret = toret->parent_refrence;
-					delete parent;
+			var_node* current_node = to_execute->context->head;
+			while (current_node != nullptr) {
+				if (current_node->unique_ref->parent_refrence != nullptr) {
+					current_node->unique_ref->parent_refrence = current_node->unique_ref->refrence_correct(current_node->unique_ref);
 				}
-				toret->replaceNullContext(context);
+				current_node = current_node->next;
 			}
-			/*for (size_t i = 0; i < prototype->params->size; i++)
-			{
-				if (to_execute->context->collection[i]->unique_ref->parent_context != to_execute->context) {
-					to_execute->context->collection[i]->unique_ref->context_check(to_execute->context);
-					to_execute->context->collection[i]->unique_ref->replaceNullContext(context);
-				}
-			}*/
-
-			while (param_begin_node != nullptr)
-			{
-				if (param_begin_node->unique_ref->parent_context != to_execute->context) {
-					param_begin_node->unique_ref->context_check(to_execute->context);
-					param_begin_node->unique_ref->replaceNullContext(context);
-				}
-				param_begin_node = param_begin_node->next;
+			if (toret->parent_refrence != nullptr) {
+				toret->parent_refrence = toret->refrence_correct(toret->parent_refrence);
 			}
 
+			current_node = to_execute->context->head;
+			while (current_node != nullptr)
+			{
+				if (current_node->unique_ref->parent_context == to_execute->context && current_node->unique_ref->refrences > 0) {
+					current_node->unique_ref->parent_context = context;
+					context->push_refrence(current_node->unique_ref);
+				}
+				current_node = current_node->next;
+			}
 			delete to_execute;
 			return toret;
 		}
 		else {
 			value_array* arguments = new value_array(func_call->arguments->size);
-			/*for (size_t i = 0; i < func_call->arguments->size; i++)
-			{
-				arguments->collection[i] = getValue(context, func_call->arguments->tokens[i], true);
-			}*/
 
 			struct token* current_tok = func_call->arguments->head;
 			unsigned int i = 0;
@@ -235,29 +191,30 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			}
 
 			value* toret;
+			unsigned long func_id_hash = dj2b(func_call->identifier->identifier);
 
-			if (strcmp(func_call->identifier->identifier, "input") == 0) {
+			if (func_id_hash == 276049397) {
 				toret = readLine(context);
 			}
-			else if (strcmp(func_call->identifier->identifier, "print") == 0)
+			else if (func_id_hash == 275790354)
 			{
 				write(arguments);
 				toret = new value();
 			}
-			else if (strcmp(func_call->identifier->identifier, "printl") == 0) {
+			else if (func_id_hash == 205349534) {
 				writeLine(arguments);
 				toret = new value();
 			}
-			else if (strcmp(func_call->identifier->identifier, "len") == 0) {
+			else if (func_id_hash == 193500228) {
 				toret = objSize(arguments);
 			}
-			else if (strcmp(func_call->identifier->identifier, "array") == 0) {
+			else if (func_id_hash == 281262564) {
 				toret = newArray(arguments, context);
 			}
-			else if (strcmp(func_call->identifier->identifier, "clone") == 0) {
+			else if (func_id_hash == 258007862) {
 				toret = arguments->collection[0]->get_var_ptr()->clone();
 			}
-			else if (strcmp(func_call->identifier->identifier, "abort") == 0 || strcmp(func_call->identifier->identifier, "stop") == 0)
+			else if (func_id_hash == 275940093 || func_id_hash == 2090623371)
 			{
 				req_exit = true;
 				toret = new value();
@@ -463,6 +420,9 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		case TOK_FOR: {
 			for_token* for_tok = (for_token*)current_token;
 			unique_refrence* to_iterate = getValue(call_frame->context, for_tok->to_iterate, false);
+			if (call_frame->context->has_val(for_tok->iterator_identifier->identifier)) {
+				throw ERROR_VARIABLE_ALREADY_DEFINED;
+			}
 			unique_refrence* iterator = call_frame->context->declare(for_tok->iterator_identifier->identifier, new unique_refrence(nullptr, nullptr, call_frame->context));
 			double limit = to_iterate->get_var_ptr()->length();
 			for (size_t i = 0; i < limit; i++)
@@ -494,7 +454,8 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		}
 		case TOK_IMPORT: {
 			import_token* import_tok = (import_token*)current_token;
-			if (importSet->count(file_path_hash(import_tok->path))) {
+			unsigned long file_hash = file_path_hash(import_tok->path);
+			if (importSet->count(file_hash)) {
 				break;
 			}
 			std::ifstream infile;
@@ -515,7 +476,8 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				}
 				catch (int error) {
 					error_info(error);
-					std::cout << " Occured at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << std::endl;
+					std::cout << " Occured at ROW: " << lexer->position->row << ", COL: " << lexer->position->col << ". Fastcode has stopped import-guarding \"" << import_tok->path << "\"."<< std::endl;
+					importSet->erase(file_hash);
 				}
 				delete lexer;
 				delete[] buffer;
@@ -524,7 +486,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 					delete execute(call_frame, tokens);
 				}
 				else {
-					throw ERROR_IMPORT_SYNTAX_ERR;
+					throw ERROR_IMPORT_SYNTAX_ERR; //wait to after delete lexer and delete[] buffer to throw exception
 				}
 			}
 			else {

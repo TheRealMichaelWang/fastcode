@@ -1,3 +1,36 @@
+rem A string compare method, though it doesn't return the difference like K&R
 proc strcmp(a, b) {
-	
+	i = 0
+	while i < len(a) {
+		if i >= len(b) => false
+		elif a[i] != b[i] => false
+		i++
+	}
+	return true
+}
+
+rem concatonates two strings
+proc strcat(a, b) {
+	str = array(len(a) + len(b))
+	i = 0
+	while i < len(a) {
+		str[i] = a[i]
+		i++
+	}
+	i = 0
+	while i < len(b) {
+		str[i + len(a)] = b[i]
+		i++
+	}
+	return str
+}
+
+rem gets a substring
+proc substr(str, start, stop) {
+	substr = array(stop - start)
+	i = start
+	while i < stop {
+		substr[i - start] = str[i]
+	}
+	return substr
 }

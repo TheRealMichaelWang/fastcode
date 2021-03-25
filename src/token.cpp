@@ -423,15 +423,15 @@ void print_op(char op) {
 }
 
 void print_body(token_set* body) {
-	std::cout << '{' << std::endl;
+	std::cout << '{';
 	token* current_tok = body->head;
 	while (current_tok !=nullptr)
 	{
-		std::cout << '\t';
+		std::cout << std::endl << '\t';
 		print_token(current_tok);
 		current_tok = current_tok->next_tok;
 	}
-	std::cout << '}';
+	std::cout << std::endl << '}';
 }
 
 void print_token(token* token) {
