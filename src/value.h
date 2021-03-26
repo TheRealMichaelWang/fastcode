@@ -32,9 +32,7 @@ public:
 	unique_refrence* iterate(size_t index);
 	double length();
 	value* clone();
-	value* shallowClone();
 	double compare(value* value);
-	//bool has_val_ptr(value* val_ptr);
 };
 
 class unique_refrence {
@@ -42,7 +40,6 @@ public:
 	var_context* parent_context;
 	unique_refrence* parent_refrence;
 	value* value_ptr;
-	unsigned int refrences;
 	unique_refrence(value* value_ptr, unique_refrence* parent_refrence, var_context* parent_context);
 	~unique_refrence();
 	bool is_root_refrence();
@@ -67,7 +64,6 @@ public:
 	bool checktype(char type);
 	unique_refrence* iterate(size_t index);
 	value_array* clone();
-	value_array* shallowClone(bool take_ownership = true);
 	double compare(value_array* array);
 	//bool has_val_ptr(value* val_ptr);
 };
@@ -81,7 +77,6 @@ public:
 	structure(char* identifier, var_context* parent_context);
 	~structure();
 	structure* clone();
-	structure* shallowClone(bool take_ownership = true);
 };
 
 class var_node {
@@ -105,6 +100,7 @@ public:
 	void remove(char* identifier);
 	unique_refrence* searchForVal(char* identifier);
 	bool has_val(char* identifier);
+	bool _disposing;
 };
 
 value* applyUniaryOp(char type, unique_refrence* value);

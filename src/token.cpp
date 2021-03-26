@@ -299,7 +299,7 @@ conditional_token::~conditional_token()
 	if (condition != nullptr) {
 		generic_destroy_token(condition);
 	}
-	if (next_condition != nullptr) {
+	if (next_condition != nullptr && next_condition != this) {
 		generic_destroy_token(next_condition);
 	}
 	delete instructions;

@@ -63,11 +63,6 @@ var_context* static_context;
 token* last_tok;
 bool req_exit;
 
-//bool can_delete(var_context* context, value* var_ptr)
-//{
-//	return (context->has_val_ptr(var_ptr) || static_context->has_val_ptr(var_ptr));
-//}
-
 unique_refrence* getValue(var_context* context, token* token, bool force_refrence)
 {
 	switch (token->type)
@@ -75,7 +70,6 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	case TOK_VALUE:{
 		value_token* val_tok = (value_token*)token;
 		unique_refrence* ref = new unique_refrence(val_tok->value->clone(), nullptr, nullptr);
-		//ref->replaceNullContext(context);
 		return ref;
 	}
 	case TOK_IDENTIFIER:{
@@ -83,11 +77,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 		if (var_ptr->get_var_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
 		{
 			return new unique_refrence(var_ptr->get_var_ptr(), var_ptr, nullptr);
-		}/*
-		else if(var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT){
-			structure* shallow_copy = ((structure*)var_ptr->get_var_ptr()->ptr)->shallowClone(false);
-			return new unique_refrence(new value(VALUE_TYPE_STRUCT, shallow_copy), nullptr, nullptr);
-		}*/
+		}
 		return new unique_refrence(var_ptr->get_var_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
@@ -192,13 +182,16 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			return toret;
 		}
 		else {
+			/*
+				Built-In functions are processed here. Due to small amount of built-ins, they are all hard coded.
+			*/
 			value_array* arguments = new value_array(func_call->arguments->size);
 
 			struct token* current_tok = func_call->arguments->head;
 			unsigned int i = 0;
 			while (current_tok != nullptr)
 			{
-				arguments->collection[i++] = getValue(context, current_tok, true);
+				arguments->collection[i] = getValue(context, current_tok, true);
 				current_tok = current_tok->next_tok;
 			}
 
@@ -351,6 +344,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			call_frame->reqBreak = true;
 			goto escape;
 		}
+		case TOK_WHILE:
 		case TOK_IF: {
 			conditional_token* current_conditional = (conditional_token*)current_token;
 			while (current_conditional != nullptr)
@@ -373,7 +367,12 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				delete condition_result_val;
 				if (condition_result == 0)
 				{
-					current_conditional = current_conditional->next_condition;
+					if (current_conditional->type == TOK_IF || current_conditional->type == TOK_ELIF) {
+						current_conditional = current_conditional->next_condition;
+					}
+					else if (current_conditional->type == TOK_WHILE){
+						break;
+					}
 				}
 				else
 				{
@@ -393,39 +392,13 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 						goto escape;
 					}
 					delete p_return_val;
-					break;
+					if (current_conditional->type == TOK_IF || current_conditional->type == TOK_ELIF) {
+						break;
+					}
+					else if(current_conditional->type == TOK_WHILE){
+						current_conditional = current_conditional->next_condition;
+					}
 				}
-			}
-			break;
-		}
-		case TOK_WHILE: {
-			conditional_token* current_conditional = (conditional_token*)current_token;
-			while (true)
-			{
-				unique_refrence* condition_result_val = getValue(call_frame->context, current_conditional->condition, false);
-				double condition_result = *(double*)condition_result_val->get_var_ptr()->ptr;
-				delete condition_result_val;
-				if (condition_result == 0)
-				{
-					break;
-				}
-				unique_refrence* p_return_val = execute(call_frame, current_conditional->instructions);
-				if (req_exit) {
-					goto escape;
-				}
-				else if (call_frame->isFinished)
-				{
-					delete return_value;
-					return_value = p_return_val;
-					goto escape;
-				}
-				else if (call_frame->reqBreak)
-				{
-					call_frame->reqBreak = false;
-					delete p_return_val;
-					break;
-				}
-				delete p_return_val;
 			}
 			break;
 		}
@@ -535,8 +508,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		default:
 			throw ERROR_UNEXPECTED_TOK;
 		}
-		if (req_exit)
-		{
+		if (req_exit) {
 			goto escape;
 		}
 		current_token = current_token->next_tok;

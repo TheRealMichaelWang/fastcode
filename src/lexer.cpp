@@ -73,77 +73,58 @@ token* lexer::readNextToken()
 		}
 		identifier[i++] = EndOfFile;
 		unsigned long id_hash = dj2b(identifier);
-		if (id_hash == 193489624) {
-			delete[] identifier; return new token(TOK_AND);
-		}
-		else if (id_hash == 193507094) {
-			delete[] identifier; return new token(TOK_NOT);
-		}
-		else if (id_hash == 5863782) {
-			delete[] identifier; return new token(TOK_OR);
-		}
-		else if (id_hash == 5863644) {
-			delete[] identifier; return new token(TOK_IN);
-		}
-		else if (id_hash == 5863380) {
-			delete[] identifier; return new token(TOK_IF);
-		}
-		else if (id_hash == 2090232142) {
-			delete[] identifier; return new token(TOK_ELSE);
-		}
-		else if (id_hash == 2090257189) {
-			delete[] identifier; return new token(TOK_ELIF);
-		}
-		else if (id_hash == 193504908) {
-			delete[] identifier; return new token(TOK_FOR);
-		}
-		else if (id_hash == 257929342) {
-			delete[] identifier; return new token(TOK_WHILE);
-		}
-		else if (id_hash == 2090156121 || id_hash == 998468366 || id_hash == 1574308811) {
-			delete[] identifier; return new token(TOK_FUNCTION);
-		}
-		else if (id_hash == 498533450 || id_hash == 4184890820) {
-			delete[] identifier; return new token(TOK_STRUCT);
-		}
-		else if (id_hash == 264645514) {
-			delete[] identifier; return new token(TOK_BREAK);
-		}
-		else if (id_hash == 281511589) {
-			delete[] identifier; return new token(TOK_RETURN);
-		}
-		else if (id_hash == 516104224) {
-			delete[] identifier; return new token(TOK_IMPORT);
-		}
-		else if (id_hash == 182392118 || id_hash == 4135260141) {
-			delete[] identifier; return new token(TOK_GLOBAL);
-		}
-		else if (id_hash == 193491522) {
-			delete[] identifier; return new token(TOK_REFRENCE);
-		}
-		else if (id_hash == 193510031) {
-			delete[] identifier; return new token(TOK_NEW);
-		}
-		else if (id_hash == 193499145)
+		switch (id_hash)
 		{
+		case 193489624: 
+			delete[] identifier; return new token(TOK_AND);
+		case 193507094:
+			delete[] identifier; return new token(TOK_NOT);
+		case 5863782: 
+			delete[] identifier; return new token(TOK_OR);
+		case 5863644:
+			delete[] identifier; return new token(TOK_IN);
+		case 5863380:
+			delete[] identifier; return new token(TOK_IF);
+		case 2090232142:
+			delete[] identifier; return new token(TOK_ELSE);
+		case 2090257189:
+			delete[] identifier; return new token(TOK_ELIF);
+		case 193504908:
+			delete[] identifier; return new token(TOK_FOR);
+		case 257929342:
+			delete[] identifier; return new token(TOK_WHILE);
+		case 2090156121:
+		case 998468366:
+		case 1574308811:
+			delete[] identifier; return new token(TOK_FUNCTION);
+		case 498533450:
+		case 4184890820:
+			delete[] identifier; return new token(TOK_STRUCT);
+		case 264645514:
+			delete[] identifier; return new token(TOK_BREAK);
+		case 281511589:
+			delete[] identifier; return new token(TOK_RETURN);
+		case 516104224:
+			delete[] identifier; return new token(TOK_IMPORT);
+		case 182392118:
+		case 4135260141:
+			delete[] identifier; return new token(TOK_GLOBAL);
+		case 193491522:
+			delete[] identifier; return new token(TOK_REFRENCE);
+		case 193510031:
+			delete[] identifier; return new token(TOK_NEW);
+		case 193499145:{
 			delete[] identifier;
 			readTillNextLine();
 			return readNextToken();
 		}
-		else if (id_hash == 2090234533) {
-			delete[] identifier; 
-			return new value_token(new value(1.0));
-		}
-		else if (id_hash == 258183920) {
-			delete[] identifier;
-			return new value_token(new value(0.0));
-		}
-		else if (id_hash == 2090476384) {
-			delete[] identifier;
-			return new value_token(new value());
-		}
-		else
-		{
+		case 2090234533:
+			delete[] identifier; return new value_token(new value(1.0));
+		case 258183920:
+			delete[] identifier; return new value_token(new value(0.0));
+		case 2090476384:
+			delete[] identifier; return new value_token(new value());
+		default:
 			return (token*)new identifier_token(identifier);
 		}
 	}
@@ -197,7 +178,7 @@ token* lexer::readNextToken()
 	}
 	switch (last_char)
 	{
-	case ',':
+	case ',': 
 		readChar(); return new token(TOK_COMMA);
 	case '.':
 		readChar(); return new token(TOK_PERIOD);
@@ -211,7 +192,7 @@ token* lexer::readNextToken()
 		readChar(); return new token(TOK_CLOSE_BRACE);
 	case '[':
 		readChar(); return new token(TOK_OPEN_BRACKET);
-	case ']':
+	case ']': 
 		readChar(); return new token(TOK_CLOSE_BRACKET);
 	case '+':
 		if (Peek() == '+') {
@@ -223,7 +204,7 @@ token* lexer::readNextToken()
 			readChar(); readChar();  return new token(TOK_DECRIMENT);
 		}
 		readChar(); return new token(TOK_MINUS);
-	case '*':
+	case '*': 
 		readChar(); return new token(TOK_ASTERISK);
 	case '/':
 		if (Peek() == '/')
@@ -232,9 +213,9 @@ token* lexer::readNextToken()
 			return readNextToken();
 		}
 		readChar(); return new token(TOK_SLASH);
-	case '^':
+	case '^': 
 		readChar(); return new token(TOK_CARET);
-	case '%':
+	case '%': 
 		readChar(); return new token(TOK_MODULOUS);
 	case '&':
 		if (Peek() == '&') {
@@ -590,7 +571,10 @@ token_set* lexer::tokenize()
 			delete last_tok;
 			token_set* body = tokenize(); //read body
 
-			tok_set->push(new conditional_token(TOK_WHILE, condition, body, nullptr));
+			conditional_token* while_loop = new conditional_token(TOK_WHILE, condition, body, nullptr);
+			while_loop->next_condition = while_loop;
+
+			tok_set->push(while_loop);
 
 			last_tok = readNextToken();
 			break;

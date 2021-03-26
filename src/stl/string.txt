@@ -30,7 +30,21 @@ proc substr(str, start, stop) {
 	substr = array(stop - start)
 	i = start
 	while i < stop {
-		substr[i - start] = str[i]
+		substr[i - start] = str[i++]
 	}
 	return substr
+}
+
+rem Inserts padding on the right of a string
+proc pad_right(str, char, size) {
+	pad_str = array(size)
+	i = 0
+	while i < len(str) {
+		pad_str[i] = str[i]
+		i++
+	}
+	while i < size {
+		pad_str[i++] = char
+	}
+	return pad_str
 }
