@@ -2,6 +2,7 @@
 A perfect blend of C, Java, and Python tailored for those who desire a simple yet powerful programming language. FastCode is a procedural/structural, dynamically typed, and iterpreted programming language. 
 
 Click [here](https://github.com/TheRealMichaelWang/fastcode/raw/main/fastcode.exe) to download.
+Click [here](https://github.com/TheRealMichaelWang/fastcode/wiki) for documentation.
 
 
 # The Philosophy and Rationale
