@@ -50,6 +50,7 @@ proc fibonacci(n) {
   }
   return fibonacci(n - 1) + fibonacci(n - 2)
 }
+print(fibonacci(15)) //prints 15th number in a fibonacci sequence.
 ```
 Factorial(Recursive Brute Force)
 ```
@@ -59,4 +60,5 @@ proc fact(n) {
   }
   return n * fact(n - 1)
 }
+print(fact(10)) rem Prints 10!
 ```
