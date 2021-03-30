@@ -44,7 +44,7 @@ public:
 	~unique_refrence();
 	bool is_root_refrence();
 	void set_var_ptr(value* new_ptr, bool alter_parent = true);
-	value* get_var_ptr();
+	value* get_value_ptr();
 	void change_refrence(unique_refrence* new_ref);
 	bool context_check(var_context* delete_context);
 	void replaceNullContext(var_context* new_context);

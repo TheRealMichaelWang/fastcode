@@ -416,8 +416,8 @@ void print_op(char op) {
 	case TOK_SLASH: std::cout << '/'; break;
 	case TOK_MODULOUS: std::cout << '%'; break;
 	case TOK_CARET: std::cout << '^'; break;
-	case TOK_INCRIMENT: std::cout << "++"; break;
-	case TOK_DECRIMENT: std::cout << "--"; break;
+	case TOK_INCRIMENT: std::cout << "INCRIMENT "; break;
+	case TOK_DECRIMENT: std::cout << "DECRIMENT "; break;
 	case TOK_NOT: std::cout << "!"; break;
 	}
 }

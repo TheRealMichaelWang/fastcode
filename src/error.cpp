@@ -66,6 +66,9 @@ void error_info(int error)
 	case ERROR_IMPORT_SYNTAX_ERR: {
 		std::cout << "Runtime Error: A syntax error occured while importing external code during runtime"; break;
 	}
+	/*case ERROR_NOT_INTERACTIVE: {
+		std::cout << "Runtime Error: The requested operation could not be performed outside of interactive mode.";
+	}*/
 	default:
 		std::cout << "Unrecognized Error Type";
 	}

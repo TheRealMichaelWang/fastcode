@@ -31,6 +31,8 @@
 #define ERROR_FILE_NOT_FOUND 19
 #define ERROR_IMPORT_SYNTAX_ERR 20
 
+//#define ERROR_NOT_INTERACTIVE 21
+
 void error_info(int error);
 
 #endif // !ERROR_H

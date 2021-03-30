@@ -3,7 +3,7 @@
 #include "error.h"
 #include "token.h"
 #include "lexer.h"
-#include "flib.h"
+#include "string.h"
 
 #define EndOfFile 0
 
@@ -631,7 +631,8 @@ token_set* lexer::tokenize()
 		}
 		case TOK_IMPORT: {
 			delete last_tok;
-			value_token* val_tok = (value_token*)readNextToken();
+			matchTok((last_tok = readNextToken())->type, TOK_VALUE);
+			value_token* val_tok = (value_token*)last_tok;
 			if (val_tok->value->type != VALUE_TYPE_ARRAY) {
 				throw ERROR_UNEXPECTED_TOK;
 			}
@@ -642,7 +643,7 @@ token_set* lexer::tokenize()
 			char* str = new char[char_array->size+1];
 			for (size_t i = 0; i < char_array->size; i++)
 			{
-				str[i] = *(char*)char_array->collection[i]->get_var_ptr()->ptr;
+				str[i] = *(char*)char_array->collection[i]->get_value_ptr()->ptr;
 			}
 			str[char_array->size] = '\0';
 			delete val_tok;

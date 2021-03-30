@@ -3,19 +3,12 @@
 #include <stack>
 #include <set>
 #include <map>
-#include "flib.h"
+#include "string.h"
 #include "lexer.h"
 #include "value.h"
 #include "token.h"
 #include "error.h"
-
-struct CompareIdentifiers
-{
-	bool operator()(const char* lhs, const char* rhs) const
-	{
-		return strcmp(lhs, rhs) < 0;
-	}
-};
+#include "builtins.h"
 
 class call_frame
 {
@@ -55,8 +48,10 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier);
 unique_refrence* getValue(var_context* context, token* token, bool force_refrence);
 unique_refrence* execute(call_frame* call_frame, token_set* instructions);
 
-std::map<char*, function_prototype*, CompareIdentifiers>* functionDefinitions;
-std::map<char*, struct_prototype*, CompareIdentifiers>* structDefinitions;
+std::map<unsigned long, built_in_function>* built_in_functions;
+
+std::map<unsigned long, function_prototype*>* functionDefinitions;
+std::map<unsigned long, struct_prototype*>* structDefinitions;
 std::set<unsigned long>* importSet;
 std::stack<token_set*>* importedTokens;
 var_context* static_context;
@@ -74,11 +69,11 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 	case TOK_IDENTIFIER:{
 		unique_refrence* var_ptr = getVarPtr(context, (identifier_token*)token);
-		if (var_ptr->get_var_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_var_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
+		if (var_ptr->get_value_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_value_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
 		{
-			return new unique_refrence(var_ptr->get_var_ptr(), var_ptr, nullptr);
+			return new unique_refrence(var_ptr->get_value_ptr(), var_ptr, nullptr);
 		}
-		return new unique_refrence(var_ptr->get_var_ptr()->clone(), nullptr, nullptr);
+		return new unique_refrence(var_ptr->get_value_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
 		refrence_token* refrence = (refrence_token*)token;
@@ -105,11 +100,11 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 	case TOK_NEW_STRUCT: {
 		create_struct* new_struct_req = (create_struct*)token;
-		if (!structDefinitions->count(new_struct_req->identifier->identifier))
+		if (!structDefinitions->count(dj2b(new_struct_req->identifier->identifier)))
 		{
 			throw ERROR_STRUCT_NOT_FOUND;
 		}
-		struct_prototype* prototype = structDefinitions->operator[](new_struct_req->identifier->identifier);
+		struct_prototype* prototype = structDefinitions->operator[](dj2b(new_struct_req->identifier->identifier));
 		return new unique_refrence(new value(VALUE_TYPE_STRUCT, new structure(prototype, nullptr)), nullptr, nullptr);
 	}
 	case TOK_CREATE_ARRAY: {
@@ -130,8 +125,9 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 	case TOK_CALL_FUNCTION: {
 		function_call_token* func_call = (function_call_token*)token;
-		if (functionDefinitions->count(func_call->identifier->identifier)){
-			function_prototype* prototype = functionDefinitions->operator[](func_call->identifier->identifier);
+		unsigned long func_call_hash = dj2b(func_call->identifier->identifier);
+		if (functionDefinitions->count(func_call_hash)){
+			function_prototype* prototype = functionDefinitions->operator[](func_call_hash);
 			if (func_call->arguments->size != prototype->params->size)
 			{
 				throw ERROR_UNEXPECTED_ARGUMENT_LENGTH;
@@ -197,38 +193,25 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 
 			value* toret;
 			unsigned long func_id_hash = dj2b(func_call->identifier->identifier);
-
-			if (func_id_hash == 276049397) {
-				toret = readLine(context);
-			}
-			else if (func_id_hash == 275790354)
-			{
-				write(arguments);
-				toret = new value();
-			}
-			else if (func_id_hash == 205349534) {
-				writeLine(arguments);
-				toret = new value();
-			}
-			else if (func_id_hash == 193500228) {
-				toret = objSize(arguments);
-			}
-			else if (func_id_hash == 281262564) {
-				toret = newArray(arguments, context);
-			}
-			else if (func_id_hash == 258007862) {
-				toret = arguments->collection[0]->get_var_ptr()->clone();
-			}
-			else if (func_id_hash == 275940093 || func_id_hash == 2090623371)
+			
+			if (func_id_hash == 275940093 || func_id_hash == 2090623371)
 			{
 				req_exit = true;
 				toret = new value();
 			}
 			else {
-				throw ERROR_FUNCTION_NOT_FOUND;
+				if (built_in_functions->count(func_id_hash)) {
+					built_in_function function = built_in_functions->operator[](func_id_hash);
+					toret = function(arguments);
+				}
+				else {
+					throw ERROR_FUNCTION_NOT_FOUND;
+				}
 			}
 			delete arguments;
-			return new unique_refrence(toret, nullptr, context);
+			unique_refrence* toret_unique_ref = new unique_refrence(toret, nullptr, context);
+			toret_unique_ref->replaceNullContext(context);
+			return toret_unique_ref;
 		}
 	}
 	default:
@@ -255,27 +238,27 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 			if (current_tok->type == TOK_PROPERTY)
 			{
 				property_token* prop = (property_token*)current_tok;
-				if (value->get_var_ptr()->type != VALUE_TYPE_STRUCT)
+				if (value->get_value_ptr()->type != VALUE_TYPE_STRUCT)
 				{
 					throw ERROR_MUST_HAVE_STRUCT_TYPE;
 				}
-				structure* structure = (class structure*)value->get_var_ptr()->ptr;
+				structure* structure = (class structure*)value->get_value_ptr()->ptr;
 				value = structure->properties->searchForVal(prop->property_identifier);
 			}
 			else if (current_tok->type == TOK_INDEX)
 			{
 				indexer_token* indexer = (indexer_token*)current_tok;
 				unique_refrence* index = getValue(context, indexer->index, false);
-				if (index->get_var_ptr()->type != VALUE_TYPE_DOUBLE)
+				if (index->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
 				{
 					throw ERROR_MUST_HAVE_DOUBLE_TYPE;
 				}
-				int i_index = (int)*(double*)index->get_var_ptr()->ptr;
-				if (i_index >= value->get_var_ptr()->length() || i_index < 0)
+				int i_index = (int)*(double*)index->get_value_ptr()->ptr;
+				if (i_index >= value->get_value_ptr()->length() || i_index < 0)
 				{
 					throw ERROR_INDEX_OUT_OF_RANGE;
 				}
-				value = value->get_var_ptr()->iterate(i_index);
+				value = value->get_value_ptr()->iterate(i_index);
 				delete index;
 			}
 			current_tok = current_tok->next_tok;
@@ -311,12 +294,12 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			unique_refrence* val_ptr = getValue(call_frame->context, set_var->set_tok, false);
 			if (val_ptr->is_root_refrence()) {
 				//var_ptr->parent_context = call_frame->context;
-				var_ptr->set_var_ptr(val_ptr->get_var_ptr());
+				var_ptr->set_var_ptr(val_ptr->get_value_ptr());
 				var_ptr->replaceNullContext(call_frame->context);
 				val_ptr->parent_refrence = var_ptr;
 			}
 			else {
-				var_ptr->set_var_ptr(val_ptr->get_var_ptr(), false);
+				var_ptr->set_var_ptr(val_ptr->get_value_ptr(), false);
 				var_ptr->change_refrence(val_ptr->parent_refrence);
 			}
 			delete val_ptr;
@@ -328,7 +311,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			{
 				call_frame->isFinished = true;
 				unique_refrence* val_ptr = getValue(call_frame->context, ret_tok->ret_tok, false);
-				return_value->set_var_ptr(val_ptr->get_var_ptr());
+				return_value->set_var_ptr(val_ptr->get_value_ptr());
 				if (val_ptr->is_root_refrence()) {
 					val_ptr->replaceNullContext(call_frame->context);
 					val_ptr->parent_refrence = return_value;
@@ -363,7 +346,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 					break;
 				}
 				unique_refrence* condition_result_val = getValue(call_frame->context, current_conditional->condition, false);
-				double condition_result = *(double*)condition_result_val->get_var_ptr()->ptr;
+				double condition_result = *(double*)condition_result_val->get_value_ptr()->ptr;
 				delete condition_result_val;
 				if (condition_result == 0)
 				{
@@ -409,11 +392,11 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				throw ERROR_VARIABLE_ALREADY_DEFINED;
 			}
 			unique_refrence* iterator = call_frame->context->declare(for_tok->iterator_identifier->identifier, new unique_refrence(nullptr, nullptr, call_frame->context));
-			double limit = to_iterate->get_var_ptr()->length();
+			double limit = to_iterate->get_value_ptr()->length();
 			for (size_t i = 0; i < limit; i++)
 			{
-				unique_refrence* i_ref = to_iterate->get_var_ptr()->iterate(i);
-				iterator->set_var_ptr(i_ref->get_var_ptr(), false);
+				unique_refrence* i_ref = to_iterate->get_value_ptr()->iterate(i);
+				iterator->set_var_ptr(i_ref->get_value_ptr(), false);
 				iterator->change_refrence(i_ref);
 				unique_refrence* p_return_val = execute(call_frame, for_tok->instructions);
 				if (req_exit) {
@@ -489,20 +472,22 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		}
 		case TOK_FUNCTION_PROTO: {
 			function_prototype* func_proto = (function_prototype*)current_token;
-			if (functionDefinitions->count(func_proto->identifier->identifier))
+			unsigned long func_hash = dj2b(func_proto->identifier->identifier);
+			if (functionDefinitions->count(func_hash))
 			{
 				throw ERROR_FUNCTION_ALREADY_DEFINED;
 			}
-			functionDefinitions->insert(std::pair<char*, function_prototype*>(func_proto->identifier->identifier, func_proto));
+			functionDefinitions->insert(std::pair<unsigned long, function_prototype*>(func_hash, func_proto));
 			break;
 		}
 		case TOK_STRUCT_PROTO: {
 			struct_prototype* struct_proto = (struct_prototype*)current_token;
-			if (structDefinitions->count(struct_proto->identifier->identifier))
+			unsigned long struct_id = dj2b(struct_proto->identifier->identifier);
+			if (structDefinitions->count(struct_id))
 			{
 				throw ERROR_STRUCT_ALREADY_DEFINED;
 			}
-			structDefinitions->insert(std::pair<char*, struct_prototype*>(struct_proto->identifier->identifier, struct_proto));
+			structDefinitions->insert(std::pair<unsigned long, struct_prototype*>(struct_id, struct_proto));
 			break;
 		}
 		default:
@@ -521,15 +506,30 @@ escape:
 	return return_value;
 }
 
+void install_function(unsigned long id, built_in_function function) {
+	built_in_functions->insert(std::pair<unsigned long, built_in_function>(id, function));
+}
+
+void install_function(char* identifier, built_in_function function) {
+	install_function(dj2b(identifier), function);
+}
+
 int main(int argc, char** argv)
 {
 	req_exit = false;
-	functionDefinitions = new std::map<char*, function_prototype*, CompareIdentifiers>();
-	structDefinitions = new std::map<char*, struct_prototype*, CompareIdentifiers>();
+	built_in_functions = new std::map<unsigned long, built_in_function>();
+	functionDefinitions = new std::map<unsigned long, function_prototype*>();
+	structDefinitions = new std::map<unsigned long, struct_prototype*>();
 	importSet = new std::set<unsigned long>();
 	importedTokens = new std::stack<token_set*>();
 	static_context = new var_context(nullptr);
 	last_tok = nullptr;
+	install_function(276049397, readLine);
+	install_function(275790354, write);
+	install_function(205349534, writeLine);
+	install_function(193500228, objSize);
+	install_function(281262564, newArray);
+	install_function(258007862, cloneValue);
 	if (argc > 1)
 	{
 		std::ifstream infile;
@@ -660,5 +660,6 @@ int main(int argc, char** argv)
 	delete structDefinitions;
 	delete functionDefinitions;
 	delete static_context;
+	delete built_in_functions;
 	return 0;
 }
