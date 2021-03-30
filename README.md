@@ -15,8 +15,8 @@ For small programs or snippets, extreme verbosity is cumbersome and often self d
 With C# or Java your soloution would have a dozen different, often reduntant and unnecessary configuration files. With FastCode, you do not need to load a million different configuration files with your project. This is a waste of resources especially when it comes to small programs/snippets. FastCode on the other hand doesn't compell you to use unnecessary configuration files.
 ### Streamlined Syntax
 Python's syntax, albeit simple, relies heavily on indentation and is inconsistent (see the great schism of python 2.7). People who learn python often have lot's of trouble acclimating to other programming languages because of python's unique yet niche syntax. FastCode is not only a good first step for beginners, programmers expeiened in other languages can easily read and understand it. 
-### Read-Execute-Print
-Since FastCode is modeled off of the read-execute-print-loop idea, one can dynamically execute/debug, unlike C++, C, or Java. 
+### Read-Execute-Loop
+Since FastCode is based off of the read-execute-print-loop model, one can dynamically execute/debug, unlike C++, C, or Java. 
 ### Interopability and Portability
 Since FastCode is written in C++, it can be easily be used in your C/C++ project and it can easily be ported to any machine, so long as you have the correct toolchain. 
 
