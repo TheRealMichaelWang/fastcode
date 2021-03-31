@@ -1,12 +1,3 @@
-import "math.txt"
-import "math/strint.txt"
-
-rem Gets the "range" from 0 to N-1, with a step of 1
-proc stdrange(n) {
-	range = array(n)
-	k = n //remeber, we DONT want to modify n, since it's AUTOMATICALLY passed by reference
-	while k-- {
-		range[k] = k
-	}
-	return range
-}
+import "stl/math.txt"
+import "stl/math/strint.txt"
+import "stl/math/sequence.txt"

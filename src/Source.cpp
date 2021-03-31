@@ -44,9 +44,9 @@ call_frame::~call_frame()
 }
 
 //bool can_delete(var_context* context, value* var_ptr);
-unique_refrence* getVarPtr(var_context* context, identifier_token* identifier);
-unique_refrence* getValue(var_context* context, token* token, bool force_refrence);
-unique_refrence* execute(call_frame* call_frame, token_set* instructions);
+unique_reference* getVarPtr(var_context* context, identifier_token* identifier);
+unique_reference* getValue(var_context* context, token* token, bool force_refrence);
+unique_reference* execute(call_frame* call_frame, token_set* instructions);
 
 std::map<unsigned long, built_in_function>* built_in_functions;
 
@@ -58,22 +58,22 @@ var_context* static_context;
 token* last_tok;
 bool req_exit;
 
-unique_refrence* getValue(var_context* context, token* token, bool force_refrence)
+unique_reference* getValue(var_context* context, token* token, bool force_refrence)
 {
 	switch (token->type)
 	{
 	case TOK_VALUE:{
 		value_token* val_tok = (value_token*)token;
-		unique_refrence* ref = new unique_refrence(val_tok->value->clone(), nullptr, nullptr);
+		unique_reference* ref = new unique_reference(val_tok->value->clone(), nullptr, nullptr);
 		return ref;
 	}
 	case TOK_IDENTIFIER:{
-		unique_refrence* var_ptr = getVarPtr(context, (identifier_token*)token);
+		unique_reference* var_ptr = getVarPtr(context, (identifier_token*)token);
 		if (var_ptr->get_value_ptr()->type == VALUE_TYPE_ARRAY || var_ptr->get_value_ptr()->type == VALUE_TYPE_STRUCT || force_refrence)
 		{
-			return new unique_refrence(var_ptr->get_value_ptr(), var_ptr, nullptr);
+			return new unique_reference(var_ptr->get_value_ptr(), var_ptr, nullptr);
 		}
-		return new unique_refrence(var_ptr->get_value_ptr()->clone(), nullptr, nullptr);
+		return new unique_reference(var_ptr->get_value_ptr()->clone(), nullptr, nullptr);
 	}
 	case TOK_REFRENCE: {
 		refrence_token* refrence = (refrence_token*)token;
@@ -81,22 +81,22 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 	case TOK_UNIARY_OP:{
 		uniary_operator_token* uni_op = (uniary_operator_token*)token;
-		unique_refrence* temp_a = getValue(context, uni_op->value,true);
+		unique_reference* temp_a = getValue(context, uni_op->value,true);
 		temp_a->replaceNullContext(context);
 		value* result = applyUniaryOp(uni_op->op_type, temp_a);
 		delete temp_a;
-		return new unique_refrence(result, nullptr, nullptr);
+		return new unique_reference(result, nullptr, nullptr);
 	}
 	case TOK_BINARY_OP:{
 		binary_operator_token* bin_op = (binary_operator_token*)token;
-		unique_refrence* temp_a = getValue(context, bin_op->left, false);
+		unique_reference* temp_a = getValue(context, bin_op->left, false);
 		temp_a->replaceNullContext(context);
-		unique_refrence* temp_b = getValue(context, bin_op->right, false);
+		unique_reference* temp_b = getValue(context, bin_op->right, false);
 		temp_a->replaceNullContext(context);
 		value* result = applyBinaryOp(bin_op->op_type, temp_a, temp_b);
 		delete temp_a;
 		delete temp_b;
-		return new unique_refrence(result, nullptr, nullptr);
+		return new unique_reference(result, nullptr, nullptr);
 	}
 	case TOK_NEW_STRUCT: {
 		create_struct* new_struct_req = (create_struct*)token;
@@ -105,7 +105,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			throw ERROR_STRUCT_NOT_FOUND;
 		}
 		struct_prototype* prototype = structDefinitions->operator[](dj2b(new_struct_req->identifier->identifier));
-		return new unique_refrence(new value(VALUE_TYPE_STRUCT, new structure(prototype, nullptr)), nullptr, nullptr);
+		return new unique_reference(new value(VALUE_TYPE_STRUCT, new structure(prototype, nullptr)), nullptr, nullptr);
 	}
 	case TOK_CREATE_ARRAY: {
 		create_array* new_array_req = (create_array*)token;
@@ -121,7 +121,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			array->collection[i++] = getValue(context, current_tok, false);
 			current_tok = current_tok->next_tok;
 		}
-		return new unique_refrence(new value(VALUE_TYPE_ARRAY, array), nullptr, nullptr);
+		return new unique_reference(new value(VALUE_TYPE_ARRAY, array), nullptr, nullptr);
 	}
 	case TOK_CALL_FUNCTION: {
 		function_call_token* func_call = (function_call_token*)token;
@@ -139,7 +139,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			while (current_param_tok != nullptr)
 			{
 				identifier_token* param = (identifier_token*)current_param_tok;
-				unique_refrence* arg_dat = getValue(context, current_arg_tok, true);
+				unique_reference* arg_dat = getValue(context, current_arg_tok, true);
 				if (to_execute->context->has_val(param->identifier)) {
 					throw ERROR_VARIABLE_ALREADY_DEFINED;
 				}
@@ -155,11 +155,11 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				current_param_tok = current_param_tok->next_tok;
 				current_arg_tok = current_arg_tok->next_tok;
 			}
-			unique_refrence* toret = execute(to_execute, prototype->body);
+			unique_reference* toret = execute(to_execute, prototype->body);
 			toret->context_check(to_execute->context);
 			if (!toret->is_root_refrence()) {
 				if (toret->parent_context == nullptr) {
-					unique_refrence* parent = toret;
+					unique_reference* parent = toret;
 					toret = toret->parent_refrence;
 					delete parent;
 				}
@@ -189,6 +189,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 			{
 				arguments->collection[i] = getValue(context, current_tok, true);
 				current_tok = current_tok->next_tok;
+				i++;
 			}
 
 			value* toret;
@@ -209,7 +210,7 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 				}
 			}
 			delete arguments;
-			unique_refrence* toret_unique_ref = new unique_refrence(toret, nullptr, context);
+			unique_reference* toret_unique_ref = new unique_reference(toret, nullptr, context);
 			toret_unique_ref->replaceNullContext(context);
 			return toret_unique_ref;
 		}
@@ -219,9 +220,9 @@ unique_refrence* getValue(var_context* context, token* token, bool force_refrenc
 	}
 }
 
-unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
+unique_reference* getVarPtr(var_context* context, identifier_token* identifier)
 {
-	unique_refrence* value;
+	unique_reference* value;
 	if (context->has_val(identifier->identifier)) {
 		value = context->searchForVal(identifier->identifier);
 	}
@@ -248,7 +249,7 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 			else if (current_tok->type == TOK_INDEX)
 			{
 				indexer_token* indexer = (indexer_token*)current_tok;
-				unique_refrence* index = getValue(context, indexer->index, false);
+				unique_reference* index = getValue(context, indexer->index, false);
 				if (index->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
 				{
 					throw ERROR_MUST_HAVE_DOUBLE_TYPE;
@@ -267,9 +268,9 @@ unique_refrence* getVarPtr(var_context* context, identifier_token* identifier)
 	return value;
 }
 
-unique_refrence* execute(call_frame* call_frame, token_set* instructions)
+unique_reference* execute(call_frame* call_frame, token_set* instructions)
 {
-	unique_refrence* return_value = new unique_refrence(new value(), nullptr, nullptr);
+	unique_reference* return_value = new unique_reference(new value(), nullptr, nullptr);
 	token* current_token = instructions->head;
 	while(current_token != nullptr)
 	{
@@ -277,21 +278,21 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		switch (current_token->type)
 		{
 		case TOK_SET_VARIABLE: {
-			unique_refrence* var_ptr = nullptr;
+			unique_reference* var_ptr = nullptr;
 			set_variable_token* set_var = (set_variable_token*)current_token; 
 			if (!set_var->identifier->hasModifiers() && !call_frame->context->has_val(set_var->identifier->identifier) && !static_context->has_val(set_var->identifier->identifier))
 			{
 				if (set_var->global) {
-					var_ptr = static_context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, static_context));
+					var_ptr = static_context->declare(set_var->identifier->identifier, new unique_reference(new value(), nullptr, static_context));
 				}
 				else {
-					var_ptr = call_frame->context->declare(set_var->identifier->identifier, new unique_refrence(new value(), nullptr, call_frame->context));
+					var_ptr = call_frame->context->declare(set_var->identifier->identifier, new unique_reference(new value(), nullptr, call_frame->context));
 				}
 			}
 			if (var_ptr == nullptr) {
 				var_ptr = getVarPtr(call_frame->context, set_var->identifier);
 			}
-			unique_refrence* val_ptr = getValue(call_frame->context, set_var->set_tok, false);
+			unique_reference* val_ptr = getValue(call_frame->context, set_var->set_tok, false);
 			if (val_ptr->is_root_refrence()) {
 				//var_ptr->parent_context = call_frame->context;
 				var_ptr->set_var_ptr(val_ptr->get_value_ptr());
@@ -310,7 +311,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			if (ret_tok->ret_tok != nullptr)
 			{
 				call_frame->isFinished = true;
-				unique_refrence* val_ptr = getValue(call_frame->context, ret_tok->ret_tok, false);
+				unique_reference* val_ptr = getValue(call_frame->context, ret_tok->ret_tok, false);
 				return_value->set_var_ptr(val_ptr->get_value_ptr());
 				if (val_ptr->is_root_refrence()) {
 					val_ptr->replaceNullContext(call_frame->context);
@@ -334,7 +335,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 			{
 				if (current_conditional->condition == nullptr)
 				{
-					unique_refrence* p_return_val = execute(call_frame, current_conditional->instructions);
+					unique_reference* p_return_val = execute(call_frame, current_conditional->instructions);
 					if (call_frame->isFinished)
 					{
 						delete return_value;
@@ -345,7 +346,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 					current_conditional = current_conditional->next_condition;
 					break;
 				}
-				unique_refrence* condition_result_val = getValue(call_frame->context, current_conditional->condition, false);
+				unique_reference* condition_result_val = getValue(call_frame->context, current_conditional->condition, false);
 				double condition_result = *(double*)condition_result_val->get_value_ptr()->ptr;
 				delete condition_result_val;
 				if (condition_result == 0)
@@ -359,7 +360,7 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 				}
 				else
 				{
-					unique_refrence* p_return_val = execute(call_frame, current_conditional->instructions);
+					unique_reference* p_return_val = execute(call_frame, current_conditional->instructions);
 					if (req_exit) {
 						goto escape;
 					}
@@ -372,7 +373,13 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 					else if (call_frame->reqBreak)
 					{
 						delete p_return_val;
-						goto escape;
+						if (current_conditional->type == TOK_WHILE) {
+							call_frame->reqBreak = false;
+							break;
+						}
+						else {
+							goto escape;
+						}
 					}
 					delete p_return_val;
 					if (current_conditional->type == TOK_IF || current_conditional->type == TOK_ELIF) {
@@ -387,18 +394,18 @@ unique_refrence* execute(call_frame* call_frame, token_set* instructions)
 		}
 		case TOK_FOR: {
 			for_token* for_tok = (for_token*)current_token;
-			unique_refrence* to_iterate = getValue(call_frame->context, for_tok->to_iterate, false);
+			unique_reference* to_iterate = getValue(call_frame->context, for_tok->to_iterate, false);
 			if (call_frame->context->has_val(for_tok->iterator_identifier->identifier)) {
 				throw ERROR_VARIABLE_ALREADY_DEFINED;
 			}
-			unique_refrence* iterator = call_frame->context->declare(for_tok->iterator_identifier->identifier, new unique_refrence(nullptr, nullptr, call_frame->context));
+			unique_reference* iterator = call_frame->context->declare(for_tok->iterator_identifier->identifier, new unique_reference(nullptr, nullptr, call_frame->context));
 			double limit = to_iterate->get_value_ptr()->length();
 			for (size_t i = 0; i < limit; i++)
 			{
-				unique_refrence* i_ref = to_iterate->get_value_ptr()->iterate(i);
+				unique_reference* i_ref = to_iterate->get_value_ptr()->iterate(i);
 				iterator->set_var_ptr(i_ref->get_value_ptr(), false);
 				iterator->change_refrence(i_ref);
-				unique_refrence* p_return_val = execute(call_frame, for_tok->instructions);
+				unique_reference* p_return_val = execute(call_frame, for_tok->instructions);
 				if (req_exit) {
 					goto escape;
 				}
@@ -530,6 +537,9 @@ int main(int argc, char** argv)
 	install_function(193500228, objSize);
 	install_function(281262564, newArray);
 	install_function(258007862, cloneValue);
+	install_function(4259259292, getObjType);
+	install_function(256344071, file_read_text);
+	install_function(4226199350, file_write_text);
 	if (argc > 1)
 	{
 		std::ifstream infile;
@@ -598,9 +608,15 @@ int main(int argc, char** argv)
 				str_append(block, line);
 				str_append(block, "\n");
 				delete[] line;
-				if (block_checksum(block))
+				int checksum = block_checksum(block);
+				if (checksum == 0)
 				{
 					break;
+				}
+				else if (checksum < 0) {
+					std::cout << "Repl Error: Cannot construct block with negative checksum" << std::endl;
+					block[0] = '\0';
+					line_n = 0;
 				}
 				line_n++;
 			}

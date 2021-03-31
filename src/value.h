@@ -14,7 +14,7 @@
 
 typedef class value_array;
 typedef class var_context;
-typedef class unique_refrence;
+typedef class unique_reference;
 
 class value
 {
@@ -29,40 +29,40 @@ public:
 	value();
 	~value();
 	void print(int indent = 0);
-	unique_refrence* iterate(size_t index);
+	unique_reference* iterate(size_t index);
 	double length();
 	value* clone();
 	double compare(value* value);
 };
 
-class unique_refrence {
+class unique_reference {
 public:
 	var_context* parent_context;
-	unique_refrence* parent_refrence;
+	unique_reference* parent_refrence;
 	value* value_ptr;
-	unique_refrence(value* value_ptr, unique_refrence* parent_refrence, var_context* parent_context);
-	~unique_refrence();
+	unique_reference(value* value_ptr, unique_reference* parent_refrence, var_context* parent_context);
+	~unique_reference();
 	bool is_root_refrence();
 	void set_var_ptr(value* new_ptr, bool alter_parent = true);
 	value* get_value_ptr();
-	void change_refrence(unique_refrence* new_ref);
+	void change_refrence(unique_reference* new_ref);
 	bool context_check(var_context* delete_context);
 	void replaceNullContext(var_context* new_context);
 private:
-	unique_refrence* refrence_correct(unique_refrence* new_parent_refrence);
+	unique_reference* refrence_correct(unique_reference* new_parent_refrence);
 };
 
 class value_array
 {
 public:
 	int size;
-	unique_refrence** collection;
+	unique_reference** collection;
 	value_array(int size);
-	value_array(int size, unique_refrence** collection);
+	value_array(int size, unique_reference** collection);
 	//value_array(int size, value* fillValue);
 	~value_array();
 	bool checktype(char type);
-	unique_refrence* iterate(size_t index);
+	unique_reference* iterate(size_t index);
 	value_array* clone();
 	double compare(value_array* array);
 	//bool has_val_ptr(value* val_ptr);
@@ -81,10 +81,10 @@ public:
 
 class var_node {
 public:
-	unique_refrence* unique_ref;
+	unique_reference* unique_ref;
 	var_node* next;
 	unsigned long hash_id;
-	var_node(unsigned long hash_id, unique_refrence* unique_ref);
+	var_node(unsigned long hash_id, unique_reference* unique_ref);
 	~var_node();
 };
 
@@ -94,16 +94,16 @@ public:
 	var_node* head;
 	var_context(var_context* parent_context);
 	~var_context();
-	unique_refrence* declare(char* identifier, unique_refrence* value);
-	unique_refrence* declare(unsigned long hash, unique_refrence* value);
-	unique_refrence* push_refrence(unique_refrence* refrence);
+	unique_reference* declare(char* identifier, unique_reference* value);
+	unique_reference* declare(unsigned long hash, unique_reference* value);
+	unique_reference* push_refrence(unique_reference* refrence);
 	void remove(char* identifier);
-	unique_refrence* searchForVal(char* identifier);
+	unique_reference* searchForVal(char* identifier);
 	bool has_val(char* identifier);
 	bool _disposing;
 };
 
-value* applyUniaryOp(char type, unique_refrence* value);
-value* applyBinaryOp(char type, unique_refrence* a, unique_refrence* b);
+value* applyUniaryOp(char type, unique_reference* value);
+value* applyBinaryOp(char type, unique_reference* a, unique_reference* b);
 
 #endif // !VALUE_H

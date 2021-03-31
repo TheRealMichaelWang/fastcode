@@ -1,14 +1,3 @@
-rem A string compare method, though it doesn't return the difference like K&R
-proc strcmp(a, b) {
-	i = 0
-	while i < len(a) {
-		if i >= len(b) => false
-		elif a[i] != b[i] => false
-		i++
-	}
-	return true
-}
-
 rem concatonates two strings
 proc strcat(a, b) {
 	str = array(len(a) + len(b))
@@ -47,4 +36,62 @@ proc pad_right(str, char, size) {
 		pad_str[i++] = char
 	}
 	return pad_str
+}
+
+proc index_of(string, char, offset) {
+	i = offset
+	while i < len(string) {
+		if string[i] == char {
+			return i
+		}
+		i++
+	}
+	return -1 //not found
+}
+
+rem Splits a string by character
+proc split(string, char) {
+	//probe token count
+	occr = 0
+	offset = 0
+	while offset != -1 { 
+		offset = index_of(string, char, offset + 1)
+		occr++
+	}
+	
+	sections = array(occr)
+
+	//probe individual token counts
+	section_i = 0
+	current_sect = 0
+	i = 0
+	while i < len(string) {
+		if string[i] == char {
+			sections[current_sect] = array(section_i)
+			current_sect++
+			section_i = 0
+		}
+		else {
+			section_i++
+		}
+		i++
+	}
+	sections[current_sect] = array(section_i)
+
+	//read into token buffers
+	section_i = 0
+	current_sect = 0
+	i = 0
+	while i < len(string) {
+		if string[i] == char {
+			current_sect++
+			section_i = 0
+		}
+		else {
+			sections[current_sect][section_i++] = string[i]
+		}
+		i++
+	}
+
+	return sections
 }

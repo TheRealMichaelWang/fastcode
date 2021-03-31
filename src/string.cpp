@@ -29,7 +29,7 @@ int block_checksum(char* line)
 			paren_sum--;
 		}
 	}
-	return brace_sum == 0 && bracket_sum == 0 && paren_sum == 0;
+	return brace_sum + bracket_sum + paren_sum;
 }
 
 void str_append(char* to_append, const char* append_with)

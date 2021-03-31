@@ -1,4 +1,4 @@
-import "math/log.txt"
+import "stl/math/log.txt"
 
 rem Gets the lower whole number of a decimal
 proc floor(double) => double - (double % 1)

@@ -449,7 +449,8 @@ void print_token(token* token) {
 			struct token* current_tok = tok->modifiers->head;
 			while (current_tok != nullptr)
 			{
-				print_token(current_tok->next_tok);
+				print_token(current_tok);
+				current_tok = current_tok->next_tok;
 			}
 		}
 		break;

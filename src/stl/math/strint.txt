@@ -1,4 +1,4 @@
-import "math/log.txt"
+import "stl/math/log.txt"
 
 global alphanum_chars = "0123456789"
 
@@ -15,7 +15,7 @@ proc stoi(str) {
 			c_i++
 		}
 		if c_i == len(alphanum_chars) {
-			print(str[i])
+			print("ERR CHR: ",str[i])
 			return null
 		}
 		d = d + c_i * 10 ^ (len(str) - i - 1)

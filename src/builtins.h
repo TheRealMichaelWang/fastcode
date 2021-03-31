@@ -19,10 +19,10 @@ value* write(value_array* value);
 value* objSize(value_array* args);
 value* newArray(value_array* args);
 value* cloneValue(value_array* args);
-//value* get_obj_type(value_array* args);
+value* getObjType(value_array* args);
 //
 ////file io related functions
-//value* read_text();
-//value* write_text();
+value* file_read_text(value_array* args);
+value* file_write_text(value_array* args);
 
 #endif // !BUILTINS_H
