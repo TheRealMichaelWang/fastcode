@@ -1,0 +1,32 @@
+import "stl/linq/_stdlinq.txt"
+
+record queue {
+	head
+	tail
+}
+
+rem pushes an item to the end of the queue
+proc enqueue(queue, value) {
+	if queue.head == null and queue.tail == null {
+		queue.head = new node
+		queue.head.value = value
+		queue.tail = queue.head
+		queue.head = queue.tail
+	}
+	else {
+		new_tail = new node
+		new_tail.value = value
+		queue.tail.next = new_tail
+		queue.tail = new_tail
+	}
+}
+
+rem returns and removes the first item in the queue
+proc dequeue(queue, value) {
+	if queue.head == null and queue.tail == null {
+		return null //empty queue
+	}
+	else if queue.head == queue.tail {
+		toret = queue.head.value
+		queue.head = null
+		queue.tail = null

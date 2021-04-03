@@ -126,7 +126,8 @@ void value::print(int indent)
 	}
 }
 
-unique_reference* value::iterate(size_t index)
+//TODO: Modify for implementation of custom iterate operators
+unique_reference** value::iterate(size_t index)
 {
 	if (type == VALUE_TYPE_ARRAY)
 	{
@@ -174,7 +175,7 @@ double value::compare(value* value)
 		switch (type)
 		{
 		case VALUE_TYPE_CHAR:
-			return (double)(*(char*)this->ptr - *(char*)value->ptr);
+			return ((double)*(char*)this->ptr - (double)*(char*)value->ptr);
 		case VALUE_TYPE_DOUBLE:
 			return *(double*)this->ptr - *(double*)value->ptr;
 		case VALUE_TYPE_ARRAY: {
@@ -205,7 +206,7 @@ unique_reference::unique_reference(value* value_ptr, unique_reference* parent_re
 
 unique_reference::~unique_reference()
 {
-	if (this->is_root_refrence())
+	if (this->is_root_reference())
 	{
 		delete value_ptr;
 	}
@@ -214,7 +215,7 @@ unique_reference::~unique_reference()
 void unique_reference::set_var_ptr(value* new_ptr, bool alter_parent)
 {
 	if (this->parent_refrence != nullptr) {
-		this->parent_refrence = refrence_correct(this->parent_refrence);
+		//reference_correct();
 		this->value_ptr = new_ptr;
 		if (alter_parent) {
 			delete parent_refrence->value_ptr;
@@ -228,10 +229,11 @@ void unique_reference::set_var_ptr(value* new_ptr, bool alter_parent)
 }
 
 void unique_reference::change_refrence(unique_reference* new_ref) {
-	this->parent_refrence = refrence_correct(new_ref);
+	this->parent_refrence = new_ref;
+	reference_correct();
 }
 
-bool unique_reference::is_root_refrence()
+bool unique_reference::is_root_reference()
 {
 	return (parent_refrence == nullptr);
 }
@@ -240,18 +242,19 @@ value* unique_reference::get_value_ptr() {
 	if (this->parent_refrence == nullptr) {
 		return value_ptr;
 	}
-	this->parent_refrence = refrence_correct(this->parent_refrence);
+	//this->parent_refrence = reference_correct(this->parent_refrence);
 	return parent_refrence->value_ptr;
 }
 
-bool unique_reference::context_check(var_context* del_context) {
+bool unique_reference::context_check(var_context* del_context, var_context* replace_context) {
 	if (this->parent_context == del_context) {
-		this->parent_context = nullptr;
+		this->parent_context = replace_context;
 	}
-	if (this->parent_refrence != nullptr) {
-		this->parent_refrence = refrence_correct(this->parent_refrence);
+	if (!is_root_reference()) {
+		//this->parent_refrence = reference_correct(this->parent_refrence);
 		if (parent_refrence->parent_context == del_context) {
-			parent_refrence->parent_context = nullptr;
+			parent_refrence->parent_context = replace_context;
+			replace_context->push_refrence(parent_refrence);
 		}
 	}
 	value* val_ptr = get_value_ptr();
@@ -259,36 +262,28 @@ bool unique_reference::context_check(var_context* del_context) {
 		value_array* array = (value_array*)val_ptr->ptr;
 		for (size_t i = 0; i < array->size; i++)
 		{
-			array->collection[i]->context_check(del_context);
+			array->collection[i]->context_check(del_context, replace_context);
 		}
 	}
 	else if (val_ptr->type == VALUE_TYPE_STRUCT) {
 		structure* structure = (class structure*)val_ptr->ptr;
 		if (structure->properties->parent_context == del_context) {
-			structure->properties->parent_context = nullptr;
-			var_node* current_node = structure->properties->head;
-			while (current_node != nullptr)
-			{
-				current_node->unique_ref->parent_context = nullptr;
-				current_node = current_node->next;
-			}
+			structure->properties->parent_context = replace_context;
 		}
-		else {
-			var_node* current_node = structure->properties->head;
-			while (current_node != nullptr)
-			{
-				current_node->unique_ref->context_check(del_context);
-				current_node = current_node->next;
-			}
+		var_node* current_node = structure->properties->head;
+		while (current_node != nullptr)
+		{
+			current_node->unique_ref->context_check(del_context, replace_context);
+			current_node = current_node->next;
 		}
 	}
 	return true;
 }
 
 void unique_reference::replaceNullContext(var_context* new_context) {
-	if (this->parent_refrence != nullptr) {
+	/*if (this->parent_refrence != nullptr) {
 		parent_refrence->replaceNullContext(new_context);
-	}
+	}*/
 	if (this->parent_context == nullptr) {
 		this->parent_context = new_context;
 	}
@@ -314,12 +309,14 @@ void unique_reference::replaceNullContext(var_context* new_context) {
 	}
 }
 
-unique_reference* unique_reference::refrence_correct(unique_reference* new_parent) {
-	unique_reference* current = new_parent;
-	while (!current->is_root_refrence()) {
+void unique_reference::reference_correct() {
+	unique_reference* current = this;
+	while (!current->is_root_reference()) {
 		current = current->parent_refrence;
 	}
-	return current;
+	if (this != current) {
+		parent_refrence = current;
+	}
 }
 
 value_array::value_array(int size)
@@ -338,15 +335,7 @@ value_array::~value_array()
 {
 	for (size_t i = 0; i < size; i++)
 	{
-		if (collection[i]->parent_context == nullptr) {
-			delete collection[i]; //Normally this should NOT occur, however built-in-functions don't really set any contexes.
-		}
-		else if (/*collection[i]->parent_context != nullptr && */!collection[i]->parent_context->_disposing) {
-			collection[i]->parent_context->push_refrence(collection[i]);
-		}
-		else{
-			delete collection[i];
-		}
+		delete collection[i];
 	}
 	delete[] collection;
 }
@@ -362,13 +351,13 @@ bool value_array::checktype(char type)
 	}
 	return true;
 }
-unique_reference* value_array::iterate(size_t index)
+unique_reference** value_array::iterate(size_t index)
 {
 	if (index > this->size)
 	{
 		throw ERROR_INDEX_OUT_OF_RANGE;
 	}
-	return collection[index];
+	return &collection[index];
 }
 
 value_array* value_array::clone()
@@ -398,14 +387,14 @@ double value_array::compare(value_array* array)
 	return 0;
 }
 
-structure::structure(class struct_prototype* prototype, var_context* parent_context)
+structure::structure(class struct_prototype* prototype)
 {
 	this->identifier = prototype->identifier->identifier;
-	this->properties = new var_context(parent_context);
+	this->properties = new var_context(nullptr);
 	struct token* current_tok = prototype->properties->head;
 	while (current_tok != nullptr) {
 		identifier_token* prop = (identifier_token*)current_tok;
-		properties->declare(prop->identifier, new unique_reference(new value(), nullptr, parent_context));
+		properties->declare(prop->identifier, new unique_reference(new value(), nullptr, nullptr));
 		current_tok = current_tok->next_tok;
 	}
 }
@@ -447,37 +436,21 @@ var_node::~var_node() {
 
 var_context::var_context(var_context* parent_context)
 {
-	/*allocated_size = 10; 
-	size = 0;
-	this->collection = new variable*[allocated_size];
-	*/
 	this->parent_context = parent_context;
 	this->head = nullptr;
-	this->_disposing = false;
 }
 
 var_context::~var_context()
 {
-	this->_disposing = true;
 	var_node* current_node = head;
 	while (current_node != nullptr) {
 		if (parent_context == nullptr) {
 			if (current_node->unique_ref->parent_context == this) {
-				if (current_node->hash_id != -1 /*&& current_node->unique_ref->parent_context != nullptr*/ && !current_node->unique_ref->parent_context->_disposing) {
-					current_node->unique_ref->parent_context->push_refrence(current_node->unique_ref);
-				}
-				else {
-					delete current_node->unique_ref;
-				}
+				delete current_node->unique_ref;
 			}
 		}
 		else if (current_node->unique_ref->parent_context == parent_context) {
-			if (current_node->hash_id != -1 /*&& current_node->unique_ref->parent_context != nullptr*/ && !current_node->unique_ref->parent_context->_disposing) {
-				current_node->unique_ref->parent_context->push_refrence(current_node->unique_ref);
-			}
-			else {
-				delete current_node->unique_ref;
-			}
+			delete current_node->unique_ref;
 		}
 		var_node* to_delete = current_node;
 		current_node = current_node->next;
@@ -485,7 +458,7 @@ var_context::~var_context()
 	}
 }
 
-unique_reference* var_context::declare(char* identifier, unique_reference* value)
+unique_reference** var_context::declare(char* identifier, unique_reference* value)
 {
 	/*if (has_val(identifier)) {
 		throw ERROR_VARIABLE_ALREADY_DEFINED;
@@ -493,22 +466,22 @@ unique_reference* var_context::declare(char* identifier, unique_reference* value
 	return declare(dj2b(identifier), value);
 }
 
-unique_reference* var_context::declare(unsigned long hash_id, unique_reference* value) {
+unique_reference** var_context::declare(unsigned long hash_id, unique_reference* value) {
 	if (head == nullptr) {
 		head = new var_node(hash_id, value);
-		return value;
+		return &head->unique_ref;
 	}
 	var_node* old_head = head;
 	head = new var_node(hash_id, value);
 	head->next = old_head; //there are no requirements to preseve the original order
-	return value;
+	return &head->unique_ref;
 }
 
-unique_reference* var_context::push_refrence(unique_reference* refrence) {
+unique_reference** var_context::push_refrence(unique_reference* refrence) {
 	return declare(-1, refrence); //i don't give a fuck whether it's an unsigned int, the hash would be way to high for a normal string to generate either way.
 }
 
-void var_context::remove(char* identifier)
+void var_context::remove(char* identifier, bool delete_ref)
 {
 	var_node* parent = nullptr;
 	var_node* current_node = head;
@@ -516,7 +489,9 @@ void var_context::remove(char* identifier)
 	while (current_node != nullptr)
 	{
 		if (current_node->hash_id == id_hash) {
-			delete current_node->unique_ref;
+			if (delete_ref) { 
+				delete current_node->unique_ref; 
+			}
 			if (parent == nullptr) {
 				head = head->next;
 			}
@@ -533,13 +508,13 @@ void var_context::remove(char* identifier)
 	throw ERROR_NOT_IN_VAR_CONTEXT;
 }
 
-unique_reference* var_context::searchForVal(char* identifier)
+unique_reference** var_context::searchForVal(char* identifier)
 {
 	var_node* current_node = head;
 	unsigned long id_hash = dj2b(identifier);
 	while (current_node != nullptr) {
 		if (current_node->hash_id == id_hash) {
-			return current_node->unique_ref;
+			return &current_node->unique_ref;
 		}
 		current_node = current_node->next;
 	}
@@ -671,7 +646,7 @@ value* applyBinaryOp(char type, unique_reference* a, unique_reference* b)
 			value_array* combined = new value_array(a_array->size + b_array->size);
 			for (size_t i = 0; i < a_array->size; i++)
 			{
-				if (a->is_root_refrence()) {
+				if (a->is_root_reference()) {
 					combined->collection[i] = new unique_reference(a_array->collection[i]->get_value_ptr(), nullptr, nullptr);
 					a_array->collection[i]->change_refrence(combined->collection[i]);
 				}
@@ -681,7 +656,7 @@ value* applyBinaryOp(char type, unique_reference* a, unique_reference* b)
 			}
 			for (size_t i = 0; i < b_array->size; i++)
 			{
-				if (b->is_root_refrence()) {
+				if (b->is_root_reference()) {
 					combined->collection[i + a_array->size] = new unique_reference(b_array->collection[i]->get_value_ptr(), nullptr, nullptr);
 					b_array->collection[i]->change_refrence(combined->collection[i+a_array->size]);
 				}

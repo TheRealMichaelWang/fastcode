@@ -1,0 +1,24 @@
+import "stl/io/feed.txt"
+import "stl/string.txt"
+
+rem opens a feed to a file
+proc fopen(path) {
+	buffer = fread(path)
+	if buffer == null {
+		return
+	}
+	return feed(path)
+}
+
+proc readlines(path) {
+	buffer = fread(path)
+	if buffer == null {
+		return
+	}
+	return split(buffer, '\n')
+}
+
+proc writelines(path,lines) {
+	buffer = join(lines, "\n")
+	return fwrite(path)
+}

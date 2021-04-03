@@ -1,0 +1,4 @@
+record node {
+	next,
+	value
+}

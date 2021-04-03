@@ -29,7 +29,7 @@ public:
 	value();
 	~value();
 	void print(int indent = 0);
-	unique_reference* iterate(size_t index);
+	unique_reference** iterate(size_t index);
 	double length();
 	value* clone();
 	double compare(value* value);
@@ -42,14 +42,14 @@ public:
 	value* value_ptr;
 	unique_reference(value* value_ptr, unique_reference* parent_refrence, var_context* parent_context);
 	~unique_reference();
-	bool is_root_refrence();
+	bool is_root_reference();
 	void set_var_ptr(value* new_ptr, bool alter_parent = true);
 	value* get_value_ptr();
 	void change_refrence(unique_reference* new_ref);
-	bool context_check(var_context* delete_context);
+	bool context_check(var_context* del_context, var_context* replace_context);
 	void replaceNullContext(var_context* new_context);
 private:
-	unique_reference* refrence_correct(unique_reference* new_parent_refrence);
+	void reference_correct();
 };
 
 class value_array
@@ -62,7 +62,7 @@ public:
 	//value_array(int size, value* fillValue);
 	~value_array();
 	bool checktype(char type);
-	unique_reference* iterate(size_t index);
+	unique_reference** iterate(size_t index);
 	value_array* clone();
 	double compare(value_array* array);
 	//bool has_val_ptr(value* val_ptr);
@@ -73,7 +73,7 @@ class structure
 public:
 	char* identifier;
 	var_context* properties;
-	structure(class struct_prototype* prototype, var_context* parent_context);
+	structure(class struct_prototype* prototype);
 	structure(char* identifier, var_context* parent_context);
 	~structure();
 	structure* clone();
@@ -94,13 +94,12 @@ public:
 	var_node* head;
 	var_context(var_context* parent_context);
 	~var_context();
-	unique_reference* declare(char* identifier, unique_reference* value);
-	unique_reference* declare(unsigned long hash, unique_reference* value);
-	unique_reference* push_refrence(unique_reference* refrence);
-	void remove(char* identifier);
-	unique_reference* searchForVal(char* identifier);
+	unique_reference** declare(char* identifier, unique_reference* value);
+	unique_reference** declare(unsigned long hash, unique_reference* value);
+	unique_reference** push_refrence(unique_reference* refrence);
+	void remove(char* identifier, bool delete_ref = true);
+	unique_reference** searchForVal(char* identifier);
 	bool has_val(char* identifier);
-	bool _disposing;
 };
 
 value* applyUniaryOp(char type, unique_reference* value);

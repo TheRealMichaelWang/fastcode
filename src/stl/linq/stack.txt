@@ -1,0 +1,42 @@
+import "stl/linq/_stdlinq.txt"
+
+record stack {
+	head
+}
+
+proc push(stack, value) {
+	oldhead = stack.head
+	newhead = new node
+	newhead.value = value
+	newhead.next = oldhead
+	stack.head = ref newhead
+}
+
+proc pop(stack) {
+	if stack.head == null {
+		return null
+	}
+	value = stack.head.value
+	stack.head = stack.head.next
+	return value
+}
+
+proc count(stack) {
+	current = stack.head
+	count = 0
+	while true {
+		if current== null {
+			break
+		}
+		count++
+		if current.next == null {
+			break
+		}
+		else {
+			current = current.next
+		}
+	}
+	return count
+}
+
+proc empty(stack) => stack.head == null

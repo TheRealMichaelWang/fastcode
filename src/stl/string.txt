@@ -95,3 +95,31 @@ proc split(string, char) {
 
 	return sections
 }
+
+rem joins strings together
+proc join(strings, seperator) {
+	probe_len = 0
+	i = 0
+	while i < len(strings) {
+		if i > 0 {
+			probe_len = probe_len + len(seperator)
+		}
+		probe_len = probe_len + len(strings[i])
+		i++
+	}
+	joined_str = array(probe_len)
+	i = 0
+	k = 0
+	while i < len(strings) {
+		if i != 0 {
+			for char in seperator {
+				joined_str[k++] = char
+			}
+		}
+		for char in strings[i] {
+			joined_str[k++] = char
+		}
+		i++
+	}
+	return joined_str
+}
