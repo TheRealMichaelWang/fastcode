@@ -27,8 +27,8 @@ void error_info(int error)
 		std::cout << "Runtime Error: The specified arguments don't match the arguments requested in the function prototype."; break;
 	}
 	
-	case ERROR_CANNOT_ITERATE_TYPE: {
-		std::cout << "Runtime Error: Cannot iterate through the specified type"; break;
+	case ERROR_MUST_HAVE_ARRAY_TYPE: {
+		std::cout << "Runtime Error: Object must have array type."; break;
 	}									
 	case ERROR_INCOMPATIBLE_VALUE_TYPES: {
 		std::cout << "Runtime Error: Cannot apply operator on incompatible value types."; break;
@@ -57,8 +57,8 @@ void error_info(int error)
 	case ERROR_STRUCT_NOT_FOUND: {
 		std::cout << "Runtime Error: No such structure prototype corresponds to the specified identifier"; break;
 	}
-	case ERROR_NOT_IN_VAR_CONTEXT:{
-		std::cout << "Runtime Error: No such identifier corresponds to a static or local variable."; break;
+	case ERROR_VAR_NOT_FOUND:{
+		std::cout << "Runtime Error: No such static or local variable corresponds to the specified identifier."; break;
 	}
 	case ERROR_FILE_NOT_FOUND: {
 		std::cout << "Runtime Error: The requested file could not be opened."; break;
@@ -66,9 +66,6 @@ void error_info(int error)
 	case ERROR_IMPORT_SYNTAX_ERR: {
 		std::cout << "Runtime Error: A syntax error occured while importing external code during runtime"; break;
 	}
-	/*case ERROR_NOT_INTERACTIVE: {
-		std::cout << "Runtime Error: The requested operation could not be performed outside of interactive mode.";
-	}*/
 	default:
 		std::cout << "Unrecognized Error Type";
 	}

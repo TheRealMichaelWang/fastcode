@@ -187,7 +187,7 @@ identifier_token::~identifier_token()
 	}
 }
 
-bool identifier_token::hasModifiers()
+inline bool identifier_token::hasModifiers()
 {
 	return (this->modifiers != nullptr);
 }

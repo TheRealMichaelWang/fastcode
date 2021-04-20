@@ -9,6 +9,7 @@
 #include "token.h"
 #include "error.h"
 #include "builtins.h"
+#include "operators.h"
 
 class call_frame
 {
@@ -238,7 +239,7 @@ unique_reference** getVarPtr(var_context* context, identifier_token* identifier)
 		value = static_context->searchForVal(identifier->identifier);
 	}
 	else {
-		throw ERROR_NOT_IN_VAR_CONTEXT;
+		throw ERROR_VAR_NOT_FOUND;
 	}
 	if (identifier->hasModifiers()) {
 		token* current_tok = identifier->modifiers->head;
@@ -521,7 +522,7 @@ void install_function(char* identifier, built_in_function function) {
 
 int main(int argc, char** argv)
 {
-	req_exit = false;
+ 	req_exit = false;
 	built_in_functions = new std::map<unsigned long, built_in_function>();
 	functionDefinitions = new std::map<unsigned long, function_prototype*>();
 	structDefinitions = new std::map<unsigned long, struct_prototype*>();
@@ -538,6 +539,9 @@ int main(int argc, char** argv)
 	install_function(4259259292, getObjType);
 	install_function(256344071, file_read_text);
 	install_function(4226199350, file_write_text);
+	install_function(258001555, sine);
+	install_function(1790839941, cosine);
+	install_function(2418850805, tangent);
 	if (argc > 1)
 	{
 		std::ifstream infile;

@@ -98,7 +98,7 @@ public:
 	identifier_token(char* identifier); 
 	identifier_token(char* identifier, token_set* modifiers);
 	~identifier_token();
-	bool hasModifiers();
+	inline bool hasModifiers();
 };
 
 struct set_variable_token:public token

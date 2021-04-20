@@ -22,11 +22,17 @@ proc enqueue(queue, value) {
 }
 
 rem returns and removes the first item in the queue
-proc dequeue(queue, value) {
+proc dequeue(queue) {
 	if queue.head == null and queue.tail == null {
 		return null //empty queue
 	}
-	else if queue.head == queue.tail {
-		toret = queue.head.value
-		queue.head = null
-		queue.tail = null
+	value = queue.head.value
+	if queue.head == queue.tail {
+		queue.tail = NULL
+		queue.head = NULL
+	}
+	else{
+		queue.head = queue.head.next
+	}
+	return value
+}

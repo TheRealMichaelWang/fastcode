@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <math.h>
 #include "value.h"
 #include "builtins.h"
 #include "error.h"
@@ -63,9 +64,36 @@ value* getObjType(value_array* args) {
 	return new value(args->collection[0]->get_value_ptr()->type);
 }
 
+value* sine(value_array* args) {
+	if (args->collection[0]->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
+	{
+		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
+	}
+	double* d = (double*)args->collection[0]->get_value_ptr()->ptr;
+	return new value(sin(*d));
+}
+
+value* cosine(value_array* args) {
+	if (args->collection[0]->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
+	{
+		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
+	}
+	double* d = (double*)args->collection[0]->get_value_ptr()->ptr;
+	return new value(cos(*d));
+}
+
+value* tangent(value_array* args) {
+	if (args->collection[0]->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
+	{
+		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
+	}
+	double* d = (double*)args->collection[0]->get_value_ptr()->ptr;
+	return new value(tan(*d));
+}
+
 value* file_read_text(value_array* args) {
 	if (args->collection[0]->get_value_ptr()->type != VALUE_TYPE_ARRAY) {
-		throw ERROR_CANNOT_ITERATE_TYPE;
+		throw ERROR_MUST_HAVE_ARRAY_TYPE;
 	}
 	value_array* char_array = (value_array*)args->collection[0]->get_value_ptr()->ptr;
 	if (!char_array->checktype(VALUE_TYPE_CHAR)) {
@@ -99,7 +127,7 @@ value* file_read_text(value_array* args) {
 
 value* file_write_text(value_array* args) {
 	if (args->collection[0]->get_value_ptr()->type != VALUE_TYPE_ARRAY || args->collection[1]->get_value_ptr()->type != VALUE_TYPE_ARRAY) {
-		throw ERROR_CANNOT_ITERATE_TYPE;
+		throw ERROR_MUST_HAVE_ARRAY_TYPE;
 	}
 	value_array* path_char_array = (value_array*)args->collection[0]->get_value_ptr()->ptr;
 	value_array* buffer_char_array = (value_array*)args->collection[1]->get_value_ptr()->ptr;

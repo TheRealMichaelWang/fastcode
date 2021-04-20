@@ -20,23 +20,3 @@ proc pop(stack) {
 	stack.head = stack.head.next
 	return value
 }
-
-proc count(stack) {
-	current = stack.head
-	count = 0
-	while true {
-		if current== null {
-			break
-		}
-		count++
-		if current.next == null {
-			break
-		}
-		else {
-			current = current.next
-		}
-	}
-	return count
-}
-
-proc empty(stack) => stack.head == null

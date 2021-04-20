@@ -279,7 +279,7 @@ char lexer::parseChar(char c)
 		case 't':
 			readChar(); return '\t';
 		case 'b':
-			readChar(); return '\n';
+			readChar(); return '\b';
 		case '"':
 			readChar(); return '"';
 		case '\'':
