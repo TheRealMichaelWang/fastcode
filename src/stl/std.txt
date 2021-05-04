@@ -1,3 +1,0 @@
-import "stl/math.txt"
-import "stl/math/strint.txt"
-import "stl/math/sequence.txt"
