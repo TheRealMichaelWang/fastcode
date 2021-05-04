@@ -209,6 +209,8 @@ reference_apartment* interpreter::get_ref(variable_access_token* access) {
 			if (index_eval->get_value()->type != VALUE_TYPE_NUMERICAL)
 				throw ERROR_MUST_HAVE_NUM_TYPE;
 			unsigned long index_ul = (unsigned long)* (long double*)index_eval->get_value()->ptr;
+			if (index_ul >= parent->size || index < 0)
+				throw ERROR_INDEX_OUT_OF_RANGE;
 			current = parent->get_reference(index_ul);
 			delete index_eval;
 		}

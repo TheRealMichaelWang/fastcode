@@ -61,6 +61,9 @@ void destroy_top_lvl_tok(token* token) {
 	case TOKEN_RETURN:
 		delete (return_token*)token;
 		break;
+	case TOKEN_UNIARY_OP:
+		delete (uniary_operator_token*)token;
+		break;
 	case TOKEN_IF:
 	case TOKEN_ELIF:
 	case TOKEN_ELSE:

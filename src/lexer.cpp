@@ -337,6 +337,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	case TOKEN_BINARY_OP:
 	case TOKEN_UNIARY_OP:
 	case TOKEN_VALUE:
+	case OP_SUBTRACT:
 		if (interactive_mode) {
 			return print_encapsulate(tokenize_expression());
 		}
@@ -536,7 +537,6 @@ token* lexer::tokenize_value() {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		get_reference_token* get_ref_tok = new get_reference_token(tokenize_var_access());
-		read_token();
 		return get_ref_tok;
 	}
 	else if (last_tok->type == TOKEN_OPEN_PARAM) {
@@ -576,6 +576,14 @@ token* lexer::tokenize_value() {
 		token* val_tok = last_tok;
 		read_token();
 		return val_tok;
+	}
+	else if (last_tok->type == OP_INVERT || last_tok->type == OP_SUBTRACT) {
+		unsigned char type = last_tok->type;
+		if (type == OP_SUBTRACT)
+			type = OP_NEGATE;
+		delete last_tok;
+		read_token();
+		return new uniary_operator_token(tokenize_value(), type);
 	}
 	throw ERROR_UNEXPECTED_TOKEN;
 }

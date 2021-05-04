@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 				char* line = new char[250];
 				std::cin.getline(line, 250);
 				unsigned int line_size = strlen(line);
-				line[line_size++] = ';';
+				line[line_size++] = '\n';
 				line[line_size] = 0;
 				if (buf == nullptr)
 					buf = line;
