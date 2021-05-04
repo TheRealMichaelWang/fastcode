@@ -1,107 +1,47 @@
 #pragma once
 
-#include "token.h"
-
 #ifndef VALUE_H
 #define VALUE_H
 
 #define VALUE_TYPE_NULL 0
-#define VALUE_TYPE_DOUBLE 1
-#define VALUE_TYPE_CHAR 2
-#define VALUE_TYPE_ARRAY 3
+#define VALUE_TYPE_CHAR 1
+#define VALUE_TYPE_NUMERICAL 2
+#define VALUE_TYPE_COLLECTION 3
 #define VALUE_TYPE_STRUCT 4
-#define VALUE_TYPE_DELETED 5
 
-typedef class value_array;
-typedef class var_context;
-typedef class unique_reference;
-
-class value
-{
+class value {
 public:
 	char type;
 	void* ptr;
 	value(char type, void* ptr);
-	value(double d);
-	value(char c);
-	value(const char* str);
-	value(value_array* array);
-	value();
 	~value();
-	void print(int indent = 0);
-	unique_reference** iterate(size_t index);
-	double length();
+
+	//do not call unless value is primitive
 	value* clone();
-	double compare(value* value);
-};
 
-class unique_reference {
-public:
-	var_context* parent_context;
-	unique_reference* parent_refrence;
-	value* value_ptr;
-	unique_reference(value* value_ptr, unique_reference* parent_refrence, var_context* parent_context);
-	~unique_reference();
-	inline bool is_root_reference();
-	void set_var_ptr(value* new_ptr, bool alter_parent = true);
-	value* get_value_ptr();
-	inline void change_refrence(unique_reference* new_ref);
-	bool context_check(var_context* del_context, var_context* replace_context);
-	void replaceNullContext(var_context* new_context);
-private:
-	void reference_correct();
-};
+	int hash();
 
-class value_array
-{
-public:
-	int size;
-	unique_reference** collection;
-	value_array(int size);
-	value_array(int size, unique_reference** collection);
-	~value_array();
-	bool checktype(char type);
-	unique_reference** iterate(size_t index);
-	value_array* clone();
-	double compare(value_array* array);
-};
+	inline int compare(value* b) {
+		if (this->type == VALUE_TYPE_NULL)
+			return b->type == VALUE_TYPE_NULL ? 0 : 1;
+		else if (b->type == VALUE_TYPE_NULL)
+			return this->type == VALUE_TYPE_NULL ? 0 : 1;
+		return this->hash() - b->hash();
+	}
 
-class structure
-{
-public:
-	char* identifier;
-	var_context* properties;
-	structure(class struct_prototype* prototype);
-	structure(char* identifier, var_context* parent_context);
-	~structure();
-	structure* clone();
-};
+	//gets the ptr as numerical if ptr is a numerical
+	inline long double* get_numerical() {
+		return (long double*)ptr;
+	}
 
-class var_node {
-public:
-	unique_reference* unique_ref;
-	var_node* next;
-	unsigned long hash_id;
-	var_node(unsigned long hash_id, unique_reference* unique_ref);
-	~var_node();
-};
+	inline bool is_primitive() {
+		return this->type < VALUE_TYPE_COLLECTION;
+	}
 
-#define STD_HASH_MAP_LIMIT 1000
-
-class var_context {
-public:
-	var_context* parent_context;
-	var_node* head;
-	var_context(var_context* parent_context);
-	~var_context();
-	inline unique_reference** declare(char* identifier, unique_reference* value);
-	unique_reference** declare(unsigned long hash, unique_reference* value);
-	inline unique_reference** push_refrence(unique_reference* refrence);
-	void remove(char* identifier, bool delete_ref = true);
-	unique_reference** searchForVal(char* identifier);
-	bool has_val(char* identifier);
-private:
-	var_node* definition_map[STD_HASH_MAP_LIMIT];
+	//gets the ptr as char if ptr is a char
+	inline char* get_char() {
+		return (char*)ptr;
+	}
 };
 
 #endif // !VALUE_H

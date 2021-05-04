@@ -1,33 +1,22 @@
-#pragma once
-
-#include <map>
-#include "value.h"
-
 #ifndef BUILTINS_H
 #define BUILTINS_H
 
-//static hashmap of all built-ins
+#include <vector>
+#include "errors.h"
+#include "value.h"
+#include "references.h"
+#include "garbage.h"
 
-typedef value* (*built_in_function)(value_array* args);
+typedef reference_apartment* (*built_in_function)(std::vector<value*> arguments, garbage_collector* gc);
 
-//built-in flib standard library functions
+inline void match_arg_len(std::vector<value*> arguments, unsigned int expected_size) {
+	if (arguments.size() != expected_size)
+		throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
+}
 
-//really basic stl functions
-value* readLine(value_array* args);
-value* writeLine(value_array* args);
-value* write(value_array* value);
-value* objSize(value_array* args);
-value* newArray(value_array* args);
-value* cloneValue(value_array* args);
-value* getObjType(value_array* args);
-
-//trigonometry
-value* sine(value_array* args);
-value* cosine(value_array* args);
-value* tangent(value_array* args);
-
-//file io related functions
-value* file_read_text(value_array* args);
-value* file_write_text(value_array* args);
+inline void match_arg_type(value* value, char expected_type) {
+	if (value->type != expected_type)
+		throw ERROR_INVALID_VALUE_TYPE;
+}
 
 #endif // !BUILTINS_H

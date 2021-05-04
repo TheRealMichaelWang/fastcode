@@ -1,189 +1,139 @@
-#include "value.h"
-#include "error.h"
+#include <cmath>
+#include "errors.h"
 #include "operators.h"
+#include "collection.h"
 
-value* applyUniaryOp(char type, unique_reference* value)
-{
-	switch (type)
+binary_operator_token::binary_operator_token(token* left, token* right, unsigned char op) : token(TOKEN_BINARY_OP) {
+	if (!is_binary_operator(op))
+		throw ERROR_INVALID_BINARY_OPERATOR;
+	if (!is_value_tok(right) || !is_value_tok(left))
+		throw ERROR_UNEXPECTED_TOKEN;
+	this->left = left;
+	this->right = right;
+	this->op = op;
+}
+
+binary_operator_token::~binary_operator_token() {
+	destroy_value_tok(this->left);
+	destroy_value_tok(this->right);
+}
+
+uniary_operator_token::uniary_operator_token(token* value, unsigned char op) : token(TOKEN_UNIARY_OP) {
+	if (!is_uniary_operator(op))
+		throw ERROR_INVALID_UNIARY_OPERATOR;
+	if (!is_value_tok(value)) 
+		throw ERROR_UNEXPECTED_TOKEN;
+	this->value = value;
+	this->op = op;
+}
+
+uniary_operator_token::~uniary_operator_token() {
+	destroy_value_tok(this->value);
+}
+
+value* evaluate_binary_op(unsigned char op, value* a, value* b) {
+	if (is_uniary_operator(op))
+		throw ERROR_UNEXPECTED_TOKEN;
+	switch (op)
 	{
-	case TOK_MINUS: {
-		if (value->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
-		{
-			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-		}
-		return new class value(-(*(double*)value->get_value_ptr()->ptr));
-	}
-	case TOK_NOT: {
-		if (value->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
-		{
-			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-		}
-		double dval = *(double*)value->get_value_ptr()->ptr;
-		if (dval == 0.0) {
-			return new class value(1.0);
-		}
-		else {
-			return new class value(0.0);
-		}
-	}
-	case TOK_INCRIMENT: {
-		if (value->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
-		{
-			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-		}
-		class value* old = value->get_value_ptr()->clone();
-		*((double*)value->get_value_ptr()->ptr) = *((double*)value->get_value_ptr()->ptr) + 1;
-		return old;
-	}
-	case TOK_DECRIMENT: {
-		if (value->get_value_ptr()->type != VALUE_TYPE_DOUBLE)
-		{
-			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-		}
-		class value* old = value->get_value_ptr()->clone();
-		*((double*)value->get_value_ptr()->ptr) = *((double*)value->get_value_ptr()->ptr) - 1;
-		return old;
-	}
+	case OP_EQUALS:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) == 0 ? 1 : 0));
+	case OP_NOT_EQUAL:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) == 0 ? 0 : 1));
+	case OP_MORE:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) > 0 ? 1 : 0));
+	case OP_LESS:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) < 0 ? 1 : 0));
+	case OP_MORE_EQUAL:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) >= 0 ? 1 : 0));
+	case OP_LESS_EQUAL:
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->compare(b) <= 0 ? 1 : 0));
+	case OP_AND:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() != 0 && *b->get_numerical() != 0 ? 1 : 0));
+	case OP_OR:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() != 0 || *b->get_numerical() != 0 ? 1 : 0));
+	case OP_ADD:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type == VALUE_TYPE_NUMERICAL)
+			return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() + *b->get_numerical()));
+		/*else if (a->type == VALUE_TYPE_COLLECTION)
+			return new value(VALUE_TYPE_COLLECTION, new collection((collection*)a->ptr, (collection*)b->ptr));*/
+		throw ERROR_OP_NOT_IMPLEMENTED;
+	case OP_SUBTRACT:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() - *b->get_numerical()));
+	case OP_MULTIPLY:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() * *b->get_numerical()));
+	case OP_DIVIDE:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		if (*b->get_numerical() == 0)
+			throw ERROR_DIVIDE_BY_ZERO;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() / *b->get_numerical()));
+	case OP_MODULOUS:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(fmod(*a->get_numerical(), *b->get_numerical())));
+	case OP_POWER:
+		if (a->type != b->type)
+			throw ERROR_OP_NOT_IMPLEMENTED;
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(pow(*a->get_numerical(), *b->get_numerical())));
 	default:
-		throw ERROR_UNEXPECTED_TOK;
+		throw ERROR_OP_NOT_IMPLEMENTED;
 	}
 }
 
-value* applyBinaryOp(char type, unique_reference* a, unique_reference* b)
-{
-	if (a->get_value_ptr()->type != b->get_value_ptr()->type)
-	{
-		switch (type)
-		{
-		case TOK_EQUALS:
-			return new value(0.0);
-		case TOK_NOT_EQUAL:
-			return new value(1.0);
-		}
-		throw ERROR_INCOMPATIBLE_VALUE_TYPES;
+value* evaluate_uniary_op(unsigned char op, value* a) {
+	if (!is_uniary_operator(op))
+		throw ERROR_UNEXPECTED_TOKEN;
+	switch (op) {
+	case OP_INVERT:
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() == 0 ? 1 : 0));
+	case OP_NEGATE:
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		return new value(VALUE_TYPE_NUMERICAL, new long double(-*a->get_numerical()));
+	case OP_INCRIMENT: {
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		long double* old_ptr = a->get_numerical();
+		long double* new_ptr = new long double(*old_ptr + 1);
+		a->ptr = new_ptr;
+		return new value(VALUE_TYPE_NUMERICAL, old_ptr);
 	}
-	switch (type)
-	{
-	case TOK_EQUALS: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) == 0.0 ? new value(1.0) : new value(0.0);
-	}
-	case TOK_NOT_EQUAL: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) == 0.0 ? new value(0.0) : new value(1.0);
-	}
-	case TOK_MORE: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) > 0.0 ? new value(1.0) : new value(0.0);
-	}
-	case TOK_LESS: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) < 0.0 ? new value(1.0) : new value(0.0);
-	}
-	case TOK_MORE_EQUAL: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) >= 0.0 ? new value(1.0) : new value(0.0);
-	}
-	case TOK_LESS_EQUAL: {
-		return a->get_value_ptr()->compare(b->get_value_ptr()) <= 0.0 ? new value(1.0) : new value(0.0);
-	}
-	case TOK_OR: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return (a_double != 0) || (b_double != 0) ? new value(1.0) : new value(0.0);
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_AND: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return (a_double != 0) && (b_double != 0) ? new value(1.0) : new value(0.0);
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_PLUS: {
-		switch (a->get_value_ptr()->type)
-		{
-		case VALUE_TYPE_DOUBLE: {
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(a_double + b_double);
-		}
-		case VALUE_TYPE_ARRAY: {
-			value_array* a_array = (value_array*)a->get_value_ptr()->ptr;
-			value_array* b_array = (value_array*)b->get_value_ptr()->ptr;
-			value_array* combined = new value_array(a_array->size + b_array->size);
-			for (size_t i = 0; i < a_array->size; i++)
-			{
-				if (a->is_root_reference()) {
-					combined->collection[i] = new unique_reference(a_array->collection[i]->get_value_ptr(), nullptr, nullptr);
-					a_array->collection[i]->change_refrence(combined->collection[i]);
-				}
-				else {
-					combined->collection[i] = new unique_reference(a_array->collection[i]->get_value_ptr(), a_array->collection[i], nullptr);
-				}
-			}
-			for (size_t i = 0; i < b_array->size; i++)
-			{
-				if (b->is_root_reference()) {
-					combined->collection[i + a_array->size] = new unique_reference(b_array->collection[i]->get_value_ptr(), nullptr, nullptr);
-					b_array->collection[i]->change_refrence(combined->collection[i + a_array->size]);
-				}
-				else {
-					combined->collection[i + a_array->size] = new unique_reference(b_array->collection[i]->get_value_ptr(), b_array->collection[i], nullptr);
-				}
-			}
-			return new value(VALUE_TYPE_ARRAY, combined);
-		}
-		default:
-			throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-		}
-	}
-	case TOK_MINUS: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(a_double - b_double);
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_ASTERISK: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(a_double * b_double);
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_SLASH: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(a_double / b_double);
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_MODULOUS: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(fmod(a_double, b_double));
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
-	}
-	case TOK_CARET: {
-		if (a->get_value_ptr()->type == VALUE_TYPE_DOUBLE)
-		{
-			double a_double = *(double*)a->get_value_ptr()->ptr;
-			double b_double = *(double*)b->get_value_ptr()->ptr;
-			return new value(pow(a_double, b_double));
-		}
-		throw ERROR_MUST_HAVE_DOUBLE_TYPE;
+	case OP_DECRIMENT: {
+		if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;
+		long double* old_ptr = a->get_numerical();
+		long double* new_ptr = new long double(*old_ptr - 1);
+		a->ptr = new_ptr;
+		return new value(VALUE_TYPE_NUMERICAL, old_ptr);
 	}
 	default:
-		throw ERROR_UNEXPECTED_TOK;
+		throw ERROR_OP_NOT_IMPLEMENTED;
 	}
 }

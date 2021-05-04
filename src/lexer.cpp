@@ -1,866 +1,597 @@
 #include <ctype.h>
-#include <iostream>
-#include "error.h"
-#include "token.h"
+#include "errors.h"
+#include "hash.h"
+#include "operators.h"
+#include "structure.h"
 #include "lexer.h"
-#include "string.h"
 
-#define EndOfFile 0
+//encapsulation chars
+#define TOKEN_OPEN_PARAM 0 + MAX_TOKEN_LIMIT
+#define TOKEN_CLOSE_PARAM 1 + MAX_TOKEN_LIMIT
+#define TOKEN_OPEN_BRACE 2 + MAX_TOKEN_LIMIT
+#define TOKEN_CLOSE_BRACE 3 + MAX_TOKEN_LIMIT
+#define TOKEN_OPEN_BRACKET 4 + MAX_TOKEN_LIMIT
+#define TOKEN_CLOSE_BRACKET 5 + MAX_TOKEN_LIMIT
 
-marker::marker(int index, int row, int col)
-{
-	this->index = index;
-	this->row = row;
-	this->col = col;
+#define TOKEN_PERIOD 6 + MAX_TOKEN_LIMIT
+#define TOKEN_COMMA 7 + MAX_TOKEN_LIMIT
+
+#define TOKEN_NEW_KW 8 + MAX_TOKEN_LIMIT
+#define TOKEN_FUNC_KW 9 + MAX_TOKEN_LIMIT
+#define TOKEN_STRUCT_KW 10 + MAX_TOKEN_LIMIT
+#define TOKEN_REF_KW 11 + MAX_TOKEN_LIMIT
+#define TOKEN_RETURN_KW 12 + MAX_TOKEN_LIMIT
+
+#define TOKEN_STATIC_KW 13 + MAX_TOKEN_LIMIT
+
+#define TOKEN_QUICK_BODY 14 + MAX_TOKEN_LIMIT
+
+#define END 15 + MAX_TOKEN_LIMIT
+
+//throws an exception if the token type doesn't match the expected type
+inline void match_tok(token* token, unsigned char type) {
+	if (token->type != type) {
+		if (token->type == END)
+			throw ERROR_UNEXPECTED_END;
+		throw ERROR_UNEXPECTED_TOKEN;
+	}
 }
 
-lexer::lexer(const char* source)
-{
+//prints a statement
+inline function_call_token* print_encapsulate(token* token) {
+	if (token->type == TOKEN_FUNCTION_CALL) {
+		function_call_token* call_tok = (function_call_token*)token;
+		if (call_tok->identifier->id_hash == 275790354) {
+			return call_tok;
+		}
+	}
+	std::vector<class token*> args;
+	args.push_back(token);
+	return new function_call_token(new identifier_token(new char[0], 275790354), args);
+}
+
+lexer::lexer(const char* source, unsigned long source_length) {
 	this->source = source;
-	this->position = new marker(-1, 0, -1);
-	this->last_char = readChar();
+	this->source_length = source_length;
+	this->position = 0;
+	this->last_char = 0;
 	this->last_tok = nullptr;
+	read_char();
+	read_token();
 }
 
-lexer::~lexer()
-{
-	delete position;
+lexer::~lexer() {
+	if (last_tok->type == END)
+		delete last_tok;
 }
 
-char lexer::Peek()
-{
-	if (position->index + 1 >= strlen(source))
-	{
-		return EndOfFile;
+char lexer::read_char() {
+	if (position == source_length) {
+		this->last_char = 0;
+		return 0;
 	}
-	return source[position->index + 1];
+	return last_char = source[position++];
 }
 
-char lexer::readChar()
-{
-	position->col++;
-	position->index++;
-	if (position->index >= strlen(source)){
-		last_char = EndOfFile;
-		return last_char;
+token* lexer::read_token() {
+	while (last_char == ' ' || last_char == '\t' || last_char == '\r' || last_char == '\n' || last_char == ';') {
+		read_char();
 	}
-	last_char = source[position->index];
-	if (last_char == '\n'){
-		position->col = 0;
-		position->row++;
-	}
-	return last_char;
-}
-
-token* lexer::readNextToken()
-{
-	while (last_char == ' ' || last_char == '\t' || last_char == '\r' || last_char == '\n' || last_char == ';')
-	{
-		readChar();
-	}
-	if (isalpha(last_char) || last_char == '_' || last_char == '@')
-	{
-		char* identifier = new char[26];
-		int i = 0;
-		identifier[i++] = last_char;
-		while (isalnum(readChar()) || last_char == '_' || last_char == '@')
-		{
-			if (i == 25)
-			{
-				throw ERROR_STR_OVERFLOW;
-			}
-			identifier[i++] = last_char;
+	if (isalpha(last_char)) {
+		std::vector<char> id_chars;
+		do {
+			id_chars.push_back(last_char);
 		}
-		identifier[i++] = EndOfFile;
-		unsigned long id_hash = dj2b(identifier);
-		switch (id_hash)
+		while (isalpha(read_char()) || last_char == '_' || last_char == '@');
+		char* id_buf = new char[id_chars.size() + 1];
+		int index = 0;
+		for (auto it = id_chars.begin(); it != id_chars.end(); ++it)
+			id_buf[index++] = *it;
+		id_buf[index] = 0; //remeber to add a nul terminator
+		unsigned long hash = insecure_hash(id_buf);
+		//switches use pre-computed hashes because only constants are allowed
+		switch (hash)
 		{
-		case 193489624: 
-			delete[] identifier; return new token(TOK_AND);
-		case 193507094:
-			delete[] identifier; return new token(TOK_NOT);
-		case 5863782: 
-			delete[] identifier; return new token(TOK_OR);
-		case 5863644:
-			delete[] identifier; return new token(TOK_IN);
-		case 5863380:
-			delete[] identifier; return new token(TOK_IF);
-		case 2090232142:
-			delete[] identifier; return new token(TOK_ELSE);
-		case 2090257189:
-			delete[] identifier; return new token(TOK_ELIF);
-		case 193504908:
-			delete[] identifier; return new token(TOK_FOR);
-		case 257929342:
-			delete[] identifier; return new token(TOK_WHILE);
-		case 2090156121:
-		case 998468366:
-		case 1574308811:
-			delete[] identifier; return new token(TOK_FUNCTION);
-		case 498533450:
-		case 4184890820:
-			delete[] identifier; return new token(TOK_STRUCT);
-		case 264645514:
-			delete[] identifier; return new token(TOK_BREAK);
-		case 281511589:
-			delete[] identifier; return new token(TOK_RETURN);
-		case 516104224:
-			delete[] identifier; return new token(TOK_IMPORT);
-		case 182392118:
+		case 257929342: //while
+			delete[] id_buf;
+			return last_tok = new token(TOKEN_WHILE);
+		case 5863380: //if
+			delete[] id_buf;
+			return last_tok = new token(TOKEN_IF);
+		case 2090257189: //elif
+			delete[] id_buf;
+			return last_tok = new token(TOKEN_ELIF);
+		case 2090232142: //else
+			delete[] id_buf;
+			return last_tok = new token(TOKEN_ELSE);
+		case 193510031: // new
+			delete[] id_buf;
+			return last_tok = new token(TOKEN_NEW_KW);
+		case 498533450: //struct
+		case 4184890820: //record
+			return last_tok = new token(TOKEN_STRUCT_KW);
+		case 998468366: //proc
+		case 2090156121: //procedure
+		case 1574308811: //function
+			return last_tok = new token(TOKEN_FUNC_KW);
+		case 193491522: //ref
+			return last_tok = new token(TOKEN_REF_KW);
+		case 281511589: //return
+			return last_tok = new token(TOKEN_RETURN_KW);
+		case 2090234533: //true
+			delete[] id_buf;
+			return last_tok = new value_token(new value(VALUE_TYPE_NUMERICAL, new long double(1)));
+		case 258183920: //false
+			delete[] id_buf;
+			return last_tok = new value_token(new value(VALUE_TYPE_NUMERICAL, new long double(0)));
+		case 2090476384: //null
+			delete[] id_buf;
+			return last_tok = new value_token(new value(VALUE_TYPE_NULL, nullptr));
+		case 193489624: //and
+			return last_tok = new token(OP_AND);
+		case 5863782: //or
+			return last_tok = new token(OP_OR);
 		case 4135260141:
-			delete[] identifier; return new token(TOK_GLOBAL);
-		case 193491522:
-			delete[] identifier; return new token(TOK_REFRENCE);
-		case 193510031:
-			delete[] identifier; return new token(TOK_NEW);
-		case 193499145:{
-			delete[] identifier;
-			readTillNextLine();
-			return readNextToken();
-		}
-		case 2090234533:
-			delete[] identifier; return new value_token(new value(1.0));
-		case 258183920:
-			delete[] identifier; return new value_token(new value(0.0));
-		case 2090476384:
-			delete[] identifier; return new value_token(new value());
-		default:
-			return (token*)new identifier_token(identifier);
+			return last_tok = new token(TOKEN_STATIC_KW);
+		case 1413452809:
+			return last_tok = new token(TOKEN_INCLUDE);
+		case 264645514: //break
+			return last_tok = new token(TOKEN_BREAK);
+		default: 
+			return last_tok = new identifier_token(id_buf, hash);
 		}
 	}
-	else if (isdigit(last_char))
-	{
-		char* numstr = new char[26];
-		int i = 0;
-		numstr[i++] = last_char;
-		while (isdigit(readChar()) || last_char == '.')
+	else if (isdigit(last_char)) {
+		std::vector<char> num_chars;
+		do {
+			num_chars.push_back(last_char);
+		} 
+		while (isdigit(read_char()) || last_char == '.');
+		char* num_buf = new char[num_chars.size() + 1];
+		int index = 0;
+		for (auto it = num_chars.begin(); it != num_chars.end(); ++it)
+			num_buf[index++] = *it;
+		num_buf[index] = 0;
+		value_token* to_ret = new value_token(new value(VALUE_TYPE_NUMERICAL, new long double(std::strtold(num_buf, NULL))));
+		delete[] num_buf;
+		return last_tok = to_ret;
+	}
+	else if (last_char == '\"') {
+		std::vector<token*> chars;
+		read_char();
+		while (!eos() && last_char != '\"')
 		{
-			if (i == 25)
-			{
-				throw ERROR_STR_OVERFLOW;
-			}
-			numstr[i++] = last_char;
+			chars.push_back(new value_token(new value(VALUE_TYPE_CHAR, new char(read_data_char()))));
 		}
-		numstr[i++] = EndOfFile;
-		token* ret = (token*)new value_token(new value(atof(numstr)));
-		delete[] numstr;
-		return ret;
+		read_char();
+		return last_tok = new create_array_token(chars);
 	}
-	else if (last_char == '"')
-	{
-		char* strbuf = new char[251];
-		int i = 0;
-		while (readChar() != '"')
-		{
-			if(last_char == EndOfFile)
-			{
-				throw ERROR_UNEXPECTED_EOF;
-			}
-			if (i == 250)
-			{
-				throw ERROR_STR_OVERFLOW;
-			}
-			strbuf[i++] = parseChar(last_char);
-		}
-		strbuf[i++] = EndOfFile;
-		readChar();
-		token* toret = (token*)new value_token(new value(strbuf));
-		delete[] strbuf;
-		return toret;
+	else if (last_char == '\'') {
+		read_char();
+		char dat_char = read_data_char();
+		read_char();
+		return last_tok = new value_token(new value(VALUE_TYPE_CHAR, new char(dat_char)));
 	}
-	else if (last_char == '\'')
+	char old = last_char;
+	read_char();
+	switch (old)
 	{
-		readChar();
-		value* val = new value(parseChar(last_char));
-		readChar();
-		readChar();
-		return (token*)new value_token(val);
-	}
-	switch (last_char)
-	{
-	case ',': 
-		readChar(); return new token(TOK_COMMA);
-	case '.':
-		readChar(); return new token(TOK_PERIOD);
 	case '(':
-		readChar(); return new token(TOK_OPEN_PAREN);
+		return last_tok = new token(TOKEN_OPEN_PARAM);
 	case ')':
-		readChar(); return new token(TOK_CLOSE_PAREN);
+		return last_tok = new token(TOKEN_CLOSE_PARAM);
 	case '{':
-		readChar(); return new token(TOK_OPEN_BRACE);
+		return last_tok = new token(TOKEN_OPEN_BRACE);
 	case '}':
-		readChar(); return new token(TOK_CLOSE_BRACE);
+		return last_tok = new token(TOKEN_CLOSE_BRACE);
 	case '[':
-		readChar(); return new token(TOK_OPEN_BRACKET);
-	case ']': 
-		readChar(); return new token(TOK_CLOSE_BRACKET);
-	case '+':
-		if (Peek() == '+') {
-			readChar(); readChar(); return new token(TOK_INCRIMENT);
-		}
-		readChar(); return new token(TOK_PLUS);
-	case '-':
-		if (Peek() == '-') {
-			readChar(); readChar();  return new token(TOK_DECRIMENT);
-		}
-		readChar(); return new token(TOK_MINUS);
-	case '*': 
-		readChar(); return new token(TOK_ASTERISK);
-	case '/':
-		if (Peek() == '/')
-		{
-			readTillNextLine();
-			return readNextToken();
-		}
-		readChar(); return new token(TOK_SLASH);
-	case '^': 
-		readChar(); return new token(TOK_CARET);
-	case '%': 
-		readChar(); return new token(TOK_MODULOUS);
-	case '&':
-		if (Peek() == '&') {
-			readChar(); readChar(); return new token(TOK_AND);
-		}
-		readChar(); return new token(TOK_REFRENCE);
-	case '|':
-		if (Peek() == '|') {
-			readChar(); readChar(); return new token(TOK_OR);
-		}
-		throw ERROR_UNRECOGNIZED_TOK;
+		return last_tok = new token(TOKEN_OPEN_BRACKET);
+	case ']':
+		return last_tok = new token(TOKEN_CLOSE_BRACKET);
+	case '.':
+		return last_tok = new token(TOKEN_PERIOD);
+	case ',':
+		return last_tok = new token(TOKEN_COMMA);
 	case '=':
-		if (Peek() == '=') {
-			readChar(); readChar(); return new token(TOK_EQUALS);
+		if (last_char == '=') {
+			read_char();
+			return last_tok = new token(OP_EQUALS);
 		}
-		else if (Peek() == '>') {
-			readChar(); readChar(); return new token(TOK_QUICK_BLOCK);
+		else if (last_char == '>') {
+			read_char();
+			return last_tok = new token(TOKEN_QUICK_BODY);
 		}
-		readChar(); return new token(TOK_SET);
+		return last_tok = new token(TOKEN_SET);
 	case '!':
-		if (Peek() == '=') {
-			readChar(); readChar(); return new token(TOK_NOT_EQUAL);
+		if (last_char == '=') {
+			read_char();
+			return last_tok = new token(OP_NOT_EQUAL);
 		}
-		readChar(); return new token(TOK_NOT);
+		return last_tok = new token(OP_INVERT);
 	case '>':
-		if (Peek() == '=') {
-			readChar(); readChar(); return new token(TOK_MORE_EQUAL);
+		if (last_char == '=') {
+			read_char();
+			return last_tok = new token(OP_MORE_EQUAL);
 		}
-		readChar(); return new token(TOK_MORE);
+		return last_tok = new token(OP_MORE);
 	case '<':
-		if (Peek() == '=') {
-			readChar(); readChar(); return new token(TOK_LESS_EQUAL);
+		if (last_char == '=') {
+			read_char();
+			return last_tok = new token(OP_LESS_EQUAL);
 		}
-		readChar(); return new token(TOK_LESS);
-	case EndOfFile:
-		return new token(TOK_EOF);
-	default:
-		throw ERROR_UNRECOGNIZED_TOK;
+		return last_tok = new token(OP_LESS);
+	case '+':
+		if (last_char == '+') {
+			read_char();
+			return last_tok = new token(OP_INCRIMENT);
+		}
+		return last_tok = new token(OP_ADD);
+	case '-':
+		if (last_char == '-') {
+			read_char();
+			return last_tok = new token(OP_DECRIMENT);
+		}
+		return last_tok = new token(OP_SUBTRACT);
+	case '*':
+		return last_tok = new token(OP_MULTIPLY);
+	case '/':
+		return last_tok = new token(OP_DIVIDE);
+	case '%':
+		return last_tok = new token(OP_MODULOUS);
+	case '^':
+		return last_tok = new token(OP_POWER);
+	case 0:
+		return last_tok = new token(END);
 	}
+	throw ERROR_UNRECOGNIZED_TOKEN;
 }
 
-void lexer::readTillNextLine()
-{
-	while (last_char != '\n' && last_char != EndOfFile)
-	{
-		readChar();
-	}
-	readChar();
-}
-
-char lexer::parseChar(char c)
-{
-	if (c == '\\')
-	{
-		switch (Peek())
+char lexer::read_data_char() {
+	if (eos())
+		throw ERROR_UNEXPECTED_END;
+	char ret_char;
+	if (last_char == '\\') {
+		switch (read_char())
 		{
+		case 'N':
 		case 'n':
-			readChar(); return '\n';
-		case 'r':
-			readChar(); return '\r';
+			ret_char = '\n';
+			break;
+		case 'T':
 		case 't':
-			readChar(); return '\t';
+			ret_char = '\t';
+			break;
+		case 'R':
+		case 'r':
+			ret_char = '\r';
+			break;
+		case 'B':
 		case 'b':
-			readChar(); return '\b';
-		case '"':
-			readChar(); return '"';
-		case '\'':
-			readChar(); return '\'';
+			ret_char = '\b';
+			break;
 		case '\\':
-			readChar(); return '\\';
+			ret_char = '\\';
+			break;
+		case '\"':
+			ret_char = '\"';
+			break;
+		case '\'':
+			ret_char = '\'';
+			break;
+		case '0':
+			ret_char = 0;
+			break;
 		default:
-			throw ERROR_UNRECOGNIZED_CONTROL_SEQ;
+			throw ERROR_UNRECOGNIZED_ESCAPE_SEQ;
 		}
-	}
-	return c;
-}
-
-void lexer::matchTok(char matchType, char type)
-{
-	if (matchType != type)
-	{
-		throw ERROR_UNEXPECTED_TOK;
-	}
-}
-
-token_set* lexer::tokenize()
-{
-	token_set* tok_set = new token_set();
-	last_tok = readNextToken();
-	bool req_make_glob_var = false;
-	while (last_tok->type != TOK_EOF)
-	{
-		switch (last_tok->type)
-		{
-		case TOK_IDENTIFIER:
-		{
-			identifier_token* identifier = tokenizeIdentifier();
-			switch (last_tok->type)
-			{
-			case TOK_SET:
-			{
-				delete last_tok;
-				last_tok = readNextToken();
-				set_variable_token* set_var_tok = new set_variable_token(identifier, tokenizeExpression(), req_make_glob_var);
-				tok_set->push(set_var_tok);
-				req_make_glob_var = false;
-				break;
-			}
-			case TOK_OPEN_PAREN:
-			{
-				delete last_tok;
-				//function call
-
-				//fetch arguments
-				token_set* arguments = new token_set();
-
-				while (true)
-				{
-					last_tok = readNextToken();
-					if (last_tok->type == TOK_CLOSE_PAREN)
-					{
-						delete last_tok;
-						break;
-					}
-					arguments->push(tokenizeExpression());
-					if (last_tok->type == TOK_CLOSE_PAREN)
-					{
-						delete last_tok;
-						break;
-					}
-					else if (last_tok->type != TOK_COMMA)
-					{
-						throw ERROR_UNEXPECTED_TOK;
-					}
-					delete last_tok;
-				}
-				tok_set->push(new function_call_token(identifier, arguments));
-				last_tok = readNextToken();
-				break;
-			}
-			case TOK_INCRIMENT:
-			{
-				delete last_tok;
-				tok_set->push(new uniary_operator_token(TOK_INCRIMENT, identifier));
-				last_tok = readNextToken();
-				break;
-			}
-			case TOK_DECRIMENT:
-			{
-				delete last_tok;
-				tok_set->push(new uniary_operator_token(TOK_DECRIMENT, identifier));
-				last_tok = readNextToken();
-				break;
-			}
-			case EOF:
-				throw ERROR_UNEXPECTED_EOF;
-			default:
-				throw ERROR_UNEXPECTED_TOK;
-			}
-			break;
-		}
-		case TOK_FUNCTION:
-		{
-			delete last_tok;
-			matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER);
-
-			//get parameter identifiers
-			identifier_token* identifier = (identifier_token*)last_tok;
-			matchTok((last_tok = readNextToken())->type, TOK_OPEN_PAREN);
-
-			token_set* params = new token_set();
-			while (true)
-			{
-				delete last_tok;
-				last_tok = readNextToken();
-				if (last_tok->type == TOK_CLOSE_PAREN)
-				{
-					delete last_tok;
-					break;
-				}
-				matchTok(last_tok->type, TOK_IDENTIFIER);
-				params->push(last_tok);
-				last_tok = readNextToken();
-				if (last_tok->type == TOK_CLOSE_PAREN)
-				{
-					delete last_tok;
-					break;
-				}
-				else if (last_tok->type != TOK_COMMA)
-				{
-					throw ERROR_UNEXPECTED_TOK;
-				}
-			}
-
-			//push params to a function tok, and call tokenize to read function body again.
-			
-			last_tok = readNextToken();
-			if (last_tok->type == TOK_OPEN_BRACE) {
-				delete last_tok;
-
-				token_set* body = tokenize(); //tokenize function body
-
-				struct function_prototype* function_prototype = new struct function_prototype(identifier, params, body);
-				tok_set->push(function_prototype);
-				last_tok = readNextToken();
-			}
-			else if (last_tok->type == TOK_QUICK_BLOCK) {
-				delete last_tok;
-				last_tok = readNextToken();
-				token_set* body = new token_set();
-				body->push(new return_token(tokenizeExpression()));
-
-				struct function_prototype* function_prototype = new struct function_prototype(identifier, params, body);
-				tok_set->push(function_prototype);
-			}
-			else {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-			break;
-		}
-		case TOK_STRUCT:
-		{
-			delete last_tok;
-			matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER);
-			identifier_token* identifier = (identifier_token*)last_tok;
-
-			//get properties
-			matchTok((last_tok = readNextToken())->type, TOK_OPEN_BRACE);
-			delete last_tok;
-
-			token_set* properties = new token_set();
-			while ((last_tok = readNextToken())->type != TOK_CLOSE_BRACE)
-			{
-				if (last_tok->type == TOK_COMMA)
-				{
-					delete last_tok;
-					last_tok = readNextToken();
-				}
-				matchTok(last_tok->type, TOK_IDENTIFIER);
-				properties->push(last_tok);
-			}
-			delete last_tok;
-			struct struct_prototype* struct_prototype = new struct struct_prototype(identifier, properties);
-			tok_set->push(struct_prototype);
-			last_tok = readNextToken();
-			break;
-		}
-		case TOK_IF: {
-			delete last_tok;
-			last_tok = readNextToken();
-			token* condition = tokenizeExpression(); //read condition
-			token_set* body;
-			if (last_tok->type == TOK_OPEN_BRACE) {
-				delete last_tok;
-
-				body = tokenize();
-				last_tok = readNextToken();
-			}
-			else if (last_tok->type == TOK_QUICK_BLOCK) {
-				delete last_tok;
-				last_tok = readNextToken();
-				body = new token_set();
-				body->push(new return_token(tokenizeExpression()));
-			}
-			else {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-			tok_set->push(new conditional_token(TOK_IF, condition, body, nullptr));
-			break;
-		}
-		case TOK_ELIF: {
-			delete last_tok;
-
-			last_tok = readNextToken(); //read condition
-			token* condition = tokenizeExpression();
-
-			token_set* body;
-			if (last_tok->type == TOK_OPEN_BRACE) {
-				delete last_tok;
-
-				body = tokenize();
-				last_tok = readNextToken();
-			}
-			else if (last_tok->type == TOK_QUICK_BLOCK) {
-				delete last_tok;
-				last_tok = readNextToken();
-				body = new token_set();
-				body->push(new return_token(tokenizeExpression()));
-			}
-			else {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-
-			//load and check previous conditional
-			conditional_token* conditional = (conditional_token*)tok_set->tail;
-			while (conditional->next_condition != nullptr)
-			{
-				if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)
-				{
-					throw ERROR_UNEXPECTED_TOK;
-				}
-				conditional = conditional->next_condition;
-			}
-			conditional->next_condition = new conditional_token(TOK_ELIF, condition, body, nullptr);
-			break;
-		}
-		case TOK_ELSE: {
-			delete last_tok;
-
-			last_tok = readNextToken();
-			token_set* body;
-			if (last_tok->type == TOK_OPEN_BRACE) {
-				delete last_tok;
-
-				body = tokenize();
-				last_tok = readNextToken();
-			}
-			else if (last_tok->type == TOK_QUICK_BLOCK) {
-				delete last_tok;
-				last_tok = readNextToken();
-				body = new token_set();
-				body->push(new return_token(tokenizeExpression()));
-			}
-			else {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-
-			if (body->size > 0) { //check is body size is greater than zero
-				//load and check previous conditional
-				conditional_token* conditional = (conditional_token*)tok_set->tail;
-				while (conditional->next_condition != nullptr)
-				{
-					if (conditional->type != TOK_IF && conditional->type != TOK_ELIF)
-					{
-						throw ERROR_UNEXPECTED_TOK;
-					}
-					conditional = conditional->next_condition;
-				}
-				conditional->next_condition = new conditional_token(TOK_ELSE, nullptr, body, nullptr);
-			}
-			else
-			{
-				delete body;
-			}
-			break;
-		}
-		case TOK_WHILE: {
-			delete last_tok;
-			last_tok = readNextToken(); //read condition
-			token* condition = tokenizeExpression();
-
-			matchTok(last_tok->type, TOK_OPEN_BRACE);
-			delete last_tok;
-			token_set* body = tokenize(); //read body
-
-			conditional_token* while_loop = new conditional_token(TOK_WHILE, condition, body, nullptr);
-			while_loop->next_condition = while_loop;
-
-			tok_set->push(while_loop);
-
-			last_tok = readNextToken();
-			break;
-		}
-		case TOK_FOR: {
-			delete last_tok;
-
-			matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER); //get iterator
-			identifier_token* identifier = (identifier_token*)last_tok;
-
-			matchTok((last_tok = readNextToken())->type, TOK_IN);
-			delete last_tok;
-
-			last_tok = readNextToken();
-			token* to_iterate = tokenizeExpression();
-
-			matchTok(last_tok->type, TOK_OPEN_BRACE);
-			delete last_tok;
-			token_set* body = tokenize(); //read body
-
-			tok_set->push(new for_token(to_iterate, identifier, body));
-
-			last_tok = readNextToken();
-			break;
-		}
-		case TOK_RETURN:
-		{
-			delete last_tok;
-			last_tok = readNextToken();
-			if (last_tok->type == TOK_IDENTIFIER || last_tok->type == TOK_VALUE || last_tok->type == TOK_OPEN_BRACKET || is_op_token(last_tok->type))
-			{
-				tok_set->push(new return_token(tokenizeExpression()));
-			}
-			else
-			{
-				tok_set->push(new return_token());
-			}
-			break;
-		}
-		case TOK_CLOSE_BRACE: {
-			delete last_tok;
-			return tok_set; //time to return to prev read function;
-		}
-		case TOK_BREAK: {
-			tok_set->push(last_tok);
-			last_tok = readNextToken();
-			break;
-		}
-		case TOK_GLOBAL: {
-			delete last_tok;
-			last_tok = readNextToken();
-			req_make_glob_var = true;
-			break;
-		}
-		case TOK_IMPORT: {
-			delete last_tok;
-			matchTok((last_tok = readNextToken())->type, TOK_VALUE);
-			value_token* val_tok = (value_token*)last_tok;
-			if (val_tok->value->type != VALUE_TYPE_ARRAY) {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-			value_array* char_array = (value_array*)val_tok->value->ptr;
-			if (!char_array->checktype(VALUE_TYPE_CHAR)) {
-				throw ERROR_UNEXPECTED_TOK;
-			}
-			char* str = new char[char_array->size+1];
-			for (size_t i = 0; i < char_array->size; i++)
-			{
-				str[i] = *(char*)char_array->collection[i]->get_value_ptr()->ptr;
-			}
-			str[char_array->size] = '\0';
-			delete val_tok;
-
-			tok_set->push(new import_token(str));
-
-			last_tok = readNextToken();
-			break;
-		}
-		default:
-			throw ERROR_UNEXPECTED_TOK;
-		}
-	}
-	delete last_tok;
-	return tok_set;
-}
-
-token* lexer::tokenizeExpression(char min)
-{
-	token* lhs = tokenizeValue();
-	while (is_op_token(last_tok->type) && get_op_prior(last_tok->type) > min)
-	{
-		char op = last_tok->type;
-		char prec = get_op_prior(op);
-		char assoc = 0;
-		char nextmin = assoc == 0 ? prec : prec + 1;
-		delete last_tok;
-		last_tok = readNextToken();
-		token* rhs = tokenizeExpression(nextmin);
-		lhs = new binary_operator_token(op, lhs, rhs);
-	}
-	return lhs;
-}
-
-//TODO: implement this
-token* lexer::tokenizeValue()
-{
-	token* tok;
-	switch (last_tok->type)
-	{
-	case TOK_REFRENCE: {
-		delete last_tok;
-		last_tok = readNextToken();
-		return new refrence_token(tokenizeValue());
-	}
-	case TOK_VALUE:
-		tok = last_tok; break;
-	case TOK_IDENTIFIER: {
-		identifier_token* identifier = tokenizeIdentifier(); 
-		if (last_tok->type == TOK_OPEN_PAREN)
-		{
-			delete last_tok;
-			token_set* arguments = new token_set(); //fetch arguments
-			while (true)
-			{
-				last_tok = readNextToken();
-				if (last_tok->type == TOK_CLOSE_PAREN)
-				{
-					delete last_tok;
-					last_tok = readNextToken();
-					break;
-				}
-				arguments->push(tokenizeExpression());
-				if (last_tok->type == TOK_CLOSE_PAREN)
-				{
-					delete last_tok;
-					last_tok = readNextToken();
-					break;
-				}
-				else if (last_tok->type != TOK_COMMA)
-				{
-					throw ERROR_UNEXPECTED_TOK;
-				}
-				delete last_tok;
-			}
-			tok = new function_call_token(identifier, arguments);
-		}
-		else
-		{
-			tok = identifier;
-			if (last_tok->type == TOK_INCRIMENT) {
-				delete last_tok;
-				last_tok = readNextToken();
-				return new uniary_operator_token(TOK_INCRIMENT, tok);
-			}
-			else if (last_tok->type == TOK_DECRIMENT) {
-				delete last_tok;
-				last_tok = readNextToken();
-				return new uniary_operator_token(TOK_DECRIMENT, tok);
-			}
-		}
-		return tok;
-	}
-	case TOK_NEW: {
-		delete last_tok;
-		matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER);
-		identifier_token* identifier = (identifier_token*)last_tok;
-		tok = new create_struct(identifier);
-		break;
-	}
-	case TOK_OPEN_PAREN: {
-		delete last_tok;
-		last_tok = readNextToken();
-		tok = tokenizeExpression();
-		matchTok(last_tok->type, TOK_CLOSE_PAREN); 
-		delete last_tok;
-		break;
-	}
-	case TOK_OPEN_BRACKET: {
-		token_set* array_items = new token_set();
-		while (true)
-		{
-			delete last_tok;
-			last_tok = readNextToken();
-			if (last_tok->type == TOK_CLOSE_BRACKET)
-			{
-				delete last_tok;
-				last_tok = readNextToken();
-				break;
-			}
-			array_items->push(tokenizeExpression());
-			if (last_tok->type == TOK_CLOSE_BRACKET)
-			{
-				delete last_tok;
-				last_tok = readNextToken();
-				break;
-			}
-			else if (last_tok->type != TOK_COMMA)
-			{
-				throw ERROR_UNEXPECTED_TOK;
-			}
-		}
-		return new create_array(array_items);
-	}
-	case TOK_MINUS: {
-		delete last_tok;
-		last_tok = readNextToken();
-		return new uniary_operator_token(TOK_MINUS, tokenizeValue());
-	}
-	case TOK_NOT: {
-		delete last_tok;
-		last_tok = readNextToken();
-		return new uniary_operator_token(TOK_NOT, tokenizeValue());
-	}
-	case TOK_EOF:
-		throw ERROR_UNEXPECTED_EOF;
-	default: {
-		if (is_op_token(last_tok->type))
-		{
-			if (last_tok->type == TOK_MINUS) //catch preceding uniary operators
-			{
-				char op_type = last_tok->type;
-				delete last_tok;
-				last_tok = readNextToken();
-				tok = new uniary_operator_token(op_type, tokenizeValue()); //uniary operators can only be applid on single term values
-				last_tok = readNextToken();
-				return tok;
-			}
-		}
-		throw ERROR_UNEXPECTED_TOK; 
-	}
-	}
-	last_tok = readNextToken();
-	return tok;
-}
-
-//TODO: implement this. This function gets the identifier with any properties or indexers
-identifier_token* lexer::tokenizeIdentifier()
-{
-	matchTok(last_tok->type, TOK_IDENTIFIER);
-	identifier_token* identifier = (identifier_token*)last_tok;
-	token_set* modifiers = new token_set();
-	bool search = true;
-	while (search)
-	{
-		switch ((last_tok = readNextToken())->type)
-		{
-		case TOK_PERIOD:
-		{
-			delete last_tok;
-			matchTok((last_tok = readNextToken())->type, TOK_IDENTIFIER);
-			identifier_token* property_tok = (identifier_token*)last_tok;
-			char* new_id = new char[strlen(property_tok->identifier) + 1];
-			for (size_t i = 0; i < strlen(property_tok->identifier); i++)
-			{
-				new_id[i] = property_tok->identifier[i];
-			}
-			new_id[strlen(property_tok->identifier)] = '\0';
-			modifiers->push(new property_token(new_id));
-			delete property_tok;
-			break;
-		}
-		case TOK_OPEN_BRACKET:
-		{
-			delete last_tok;
-			last_tok = readNextToken();
-			token* index = tokenizeExpression();
-			matchTok(last_tok->type, TOK_CLOSE_BRACKET);
-			delete last_tok;
-			modifiers->push(new indexer_token(index));
-			break;
-		}
-		default:
-		{
-			search = false;
-			break; 
-		}
-		}
-	}
-
-	if (modifiers->size > 0)
-	{
-		identifier->modifiers = modifiers;
 	}
 	else
+		ret_char = last_char;
+	read_char();
+	return ret_char;
+}
+
+std::vector<token*> lexer::tokenize(bool interactive_mode) {
+	std::vector<token*> tokens;
+	while (!eos() && last_tok->type != TOKEN_CLOSE_BRACE)
 	{
-		delete modifiers;
+		tokens.push_back(tokenize_statement(interactive_mode));
 	}
-	return identifier;
+	if (!eos()) {
+		match_tok(last_tok, TOKEN_CLOSE_BRACE);
+	}
+	return tokens;
+}
+
+token* lexer::tokenize_statement(bool interactive_mode) {
+	switch (last_tok->type)
+	{
+	case TOKEN_BREAK: {
+		token* tok = last_tok;
+		read_token();
+		return tok; 
+	}
+	case TOKEN_INCLUDE: {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_CREATE_ARRAY);
+		create_array_token* create_str = (create_array_token*)last_tok;
+		char* buf = new char[create_str->values.size() + 1];
+		unsigned char size = 0;
+		for (auto it = create_str->values.begin(); it != create_str->values.end(); ++it) {
+			value_token* val = (value_token*)*it;
+			buf[size++] = *val->get_value()->get_char();
+		}
+		buf[size] = 0;
+		delete create_str;
+		read_token();
+		return new include_token(buf);
+	}
+	case TOKEN_IDENTIFIER:
+		if (interactive_mode) {
+			return print_encapsulate(tokenize_expression());
+		}
+		return tokenize_expression();
+	case TOKEN_OPEN_PARAM:
+	case TOKEN_CREATE_ARRAY:
+	case TOKEN_CREATE_STRUCT:
+	case TOKEN_BINARY_OP:
+	case TOKEN_UNIARY_OP:
+	case TOKEN_VALUE:
+		if (interactive_mode) {
+			return print_encapsulate(tokenize_expression());
+		}
+		throw ERROR_UNEXPECTED_TOKEN;
+	case TOKEN_RETURN_KW:
+		delete last_tok;
+		read_token();
+		return new return_token(tokenize_expression());
+	case TOKEN_IF: {
+		delete last_tok;
+		read_token();
+		token* condition = tokenize_expression();
+		conditional_token* if_struct = new conditional_token(TOKEN_IF, condition, tokenize_body(), nullptr);
+		conditional_token* current = if_struct;
+		while (true)
+		{
+			if (last_tok->type == TOKEN_ELIF) {
+				delete last_tok;
+				read_token();
+				condition = tokenize_expression();
+				current->next = new conditional_token(TOKEN_ELIF, condition, tokenize_body(), nullptr);
+				current = current->next;
+			}
+			else if (last_tok->type == TOKEN_ELSE) {
+				delete last_tok;
+				read_token();
+				current->next = new conditional_token(TOKEN_ELSE, nullptr, tokenize_body(), nullptr);
+				break;
+			}
+			else
+				break;
+		}
+		return if_struct;
+	}
+	case TOKEN_WHILE: {
+		delete last_tok;
+		read_token();
+		token* condition = tokenize_expression();
+		return new conditional_token(TOKEN_WHILE, condition, tokenize_body(), nullptr);
+	}
+	case TOKEN_STRUCT_KW: {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		identifier_token* proto_id = (identifier_token*)last_tok;
+		match_tok(read_token(), TOKEN_OPEN_BRACE);
+		delete last_tok;
+		std::vector<identifier_token*> properties;
+		while (!eos() && read_token()->type != TOKEN_CLOSE_BRACE)
+		{
+			match_tok(last_tok, TOKEN_IDENTIFIER);
+			properties.push_back((identifier_token*)last_tok);
+		}
+		if (eos())
+			throw ERROR_UNEXPECTED_END;
+		delete last_tok;
+		read_token();
+		return new structure_prototype(proto_id, properties);
+	}
+	case TOKEN_FUNC_KW: {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		identifier_token* proto_id = (identifier_token*)last_tok;
+		match_tok(read_token(), TOKEN_OPEN_PARAM);
+		delete last_tok;
+		std::vector<identifier_token*> params;
+		while (!eos() && read_token()->type != TOKEN_CLOSE_PARAM)
+		{
+			if (last_tok->type == TOKEN_COMMA) {
+				delete last_tok;
+				read_token();
+			}
+			match_tok(last_tok, TOKEN_IDENTIFIER);
+			params.push_back((identifier_token*)last_tok);
+		}
+		if (eos())
+			throw ERROR_UNEXPECTED_TOKEN;
+		delete last_tok;
+		read_token();
+		return new function_prototype(proto_id, params, tokenize_body()); 
+	}
+	case TOKEN_STATIC_KW: {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		identifier_token* id = (identifier_token*)last_tok; 
+		match_tok(read_token(), TOKEN_SET);
+		delete last_tok;
+		read_token();
+		token* val_tok = tokenize_expression();
+		std::vector<token*> modifiers;
+		modifiers.push_back(id);
+		return new set_token(new variable_access_token(modifiers), val_tok, true);
+	}
+	}
+	throw ERROR_UNEXPECTED_TOKEN;
+}
+
+std::vector<token*> lexer::tokenize_body() {
+	if (last_tok->type == TOKEN_OPEN_BRACE) {
+		delete last_tok;
+		read_token();
+		std::vector<token*> body = tokenize(false);
+		delete last_tok;
+		read_token();
+		return body;
+	}
+	else if (last_tok->type == TOKEN_QUICK_BODY) {
+		delete last_tok;
+		read_token();
+		std::vector<token*> body;
+		body.push_back(tokenize_statement(false));
+		return body;
+	}
+	else {
+		throw ERROR_UNEXPECTED_TOKEN;
+	}
+}
+
+variable_access_token* lexer::tokenize_var_access(){
+	match_tok(last_tok, TOKEN_IDENTIFIER);
+	identifier_token* identifier = (identifier_token*)last_tok;
+	read_token();
+	return tokenize_var_access(identifier);
+}
+
+variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) {
+	std::vector<token*> toks;
+	toks.push_back(identifier);
+	while (true)
+	{
+		if (last_tok->type == TOKEN_PERIOD) {
+			delete last_tok;
+			match_tok(read_token(), TOKEN_IDENTIFIER);
+			toks.push_back(last_tok);
+		}
+		else if (last_tok->type == TOKEN_OPEN_BRACKET) {
+			delete last_tok;
+			read_token();
+			toks.push_back(new index_token(tokenize_expression()));
+			match_tok(last_tok, TOKEN_CLOSE_BRACKET);
+			delete last_tok;
+		}
+		else {
+			break;
+		}
+		read_token();
+	}
+	return new variable_access_token(toks);
+}
+
+token* lexer::tokenize_value() {
+	if (last_tok->type == TOKEN_IDENTIFIER) {
+		identifier_token* identifier = (identifier_token*)last_tok;
+		read_token();
+		//tokenize function call
+		if (last_tok->type == TOKEN_OPEN_PARAM) {
+			delete last_tok;
+			std::vector<token*> arguments;
+			while (true)
+			{
+				read_token();
+				if (last_tok->type == TOKEN_CLOSE_PARAM)
+					break;
+				arguments.push_back(tokenize_expression());
+				if (last_tok->type != TOKEN_COMMA) {
+					break;
+				}
+				delete last_tok;
+			}
+			match_tok(last_tok, TOKEN_CLOSE_PARAM);
+			delete last_tok;
+			read_token();
+			return new function_call_token(identifier, arguments);
+		}
+		else 
+		{
+			variable_access_token* var_access = tokenize_var_access(identifier);
+			if (last_tok->type == OP_INCRIMENT) {
+				delete last_tok;
+				read_token();
+				return new uniary_operator_token(var_access, OP_INCRIMENT);
+			}
+			else if (last_tok->type == OP_DECRIMENT) {
+				delete last_tok;
+				read_token();
+				return new uniary_operator_token(var_access, OP_DECRIMENT);
+			}
+			else if(last_tok->type == TOKEN_SET){
+				delete last_tok;
+				read_token();
+				token* to_set = tokenize_expression();
+				return new set_token(var_access, to_set, false);
+			}
+			return var_access;
+		}
+	}
+	else if (last_tok->type == TOKEN_REF_KW) {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		get_reference_token* get_ref_tok = new get_reference_token(tokenize_var_access());
+		read_token();
+		return get_ref_tok;
+	}
+	else if (last_tok->type == TOKEN_OPEN_PARAM) {
+		delete last_tok;
+		read_token();
+		token* val_tok = tokenize_expression();
+		match_tok(last_tok, TOKEN_CLOSE_PARAM);
+		delete last_tok;
+		read_token();
+		return val_tok;
+	}
+	else if (last_tok->type == TOKEN_OPEN_BRACKET) {
+		delete last_tok;
+		std::vector<token*> values;
+		while (true)
+		{
+			read_token();
+			values.push_back(tokenize_expression());
+			if (last_tok->type != TOKEN_COMMA) {
+				break;
+			}
+			delete last_tok;
+		}
+		match_tok(last_tok, TOKEN_CLOSE_BRACKET);
+		delete last_tok;
+		read_token();
+		return new create_array_token(values);
+	}
+	else if (last_tok->type == TOKEN_NEW_KW) {
+		delete last_tok;
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		create_struct_token* new_struct = new create_struct_token((identifier_token*)last_tok);
+		read_token();
+		return new_struct;
+	}
+	else if (last_tok->type == TOKEN_VALUE || last_tok->type == TOKEN_CREATE_ARRAY){
+		token* val_tok = last_tok;
+		read_token();
+		return val_tok;
+	}
+	throw ERROR_UNEXPECTED_TOKEN;
+}
+
+token* lexer::tokenize_expression(unsigned char min) {
+	//utilizes shunting-yard
+	token* lhs = tokenize_value();
+	while (is_op_tok(last_tok->type) && get_operator_precedence(last_tok->type) >= min) {
+		unsigned char op = last_tok->type;
+		unsigned char prec = get_operator_precedence(op);
+		const unsigned char assoc = 0; //operator assosiativity 0 = left, 1 = right
+		unsigned char nextmin = assoc == 0 ? prec : prec + 1;
+		delete last_tok;
+		read_token();
+		token* rhs = tokenize_expression(nextmin);
+		lhs = new binary_operator_token(lhs, rhs, op);
+	}
+	return lhs;
 }
