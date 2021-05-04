@@ -57,7 +57,7 @@ while i-- {
 or alternativley for those of use who like one-liners.
 ```
 i = 100
-while i-- => if i % 15 == 0 => printl("fizzbuzz") elif i % 5 == 0 => print("fizz") elif i % 3 == 0 => print("buzz") else => print(i)
+while i-- => if i % 15 == 0 => printl("fizzbuzz") elif i % 5 == 0 => printl("fizz") elif i % 3 == 0 => printl("buzz") else => printl(i)
 ```
 3. Fibonacci
 ```
