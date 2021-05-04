@@ -18,45 +18,57 @@ Since FastCode is based off of the read-execute-print-loop model, one can dynami
 ### Interopability and Portability
 Since FastCode is written in C++, it can be easily be used in your C/C++ project and it can easily be ported to any machine, so long as you have the correct toolchain. 
 
-# Some Examples
-FizzBuzz
-```
-proc range(n) {
-  range = array(n)
-  while n-- {
-    range[n] = n
-  }
-  return range
-}
+# Some Example Code
 
-rem fizzbuzz from 0 to 99
-for i in range(100) {
+1. Linked List
+```
+struct node {
+  value
+  next
+}
+struct list {
+  head
+}
+proc push(list, value) {
+  newhead = new node
+  newhead.value = value
+  newhead.next = list.head
+  list.head = newhead
+}
+list = new list
+i = 10
+while i-- => push(list, i)
+```
+
+2. Fizz Buzz (0-99)
+```
+i = 100
+while i-- {
   print(i)
-  if i % 5 == 0 {
+  if i % 5 == 0{
     print("fizz")
   }
-  if i % 3 == 0 {
+  elif i % 3 == 0 {
     print("buzz")
   }
+  printl()
 }
 ```
-Fibonacci(Recursive Brute Force)
+or alternativley for those of use who like one-liners.
 ```
-proc fibonacci(n) {
-  if n == 0 or n == 1 {
+i = 100
+while i-- => if i % 15 == 0 => printl("fizzbuzz") elif i % 5 == 0 => print("fizz") elif i % 3 == 0 => print("buzz") else => print(i)
+```
+3. Fibonacci
+```
+proc fib(n) {
+  if n < 2 {
     return n
   }
-  return fibonacci(n - 1) + fibonacci(n - 2)
+  return fib(n - 1) + fib(n - 2)
 }
-print(fibonacci(15)) //prints 15th number in a fibonacci sequence.
 ```
-Factorial(Recursive Brute Force)
+again as a single line,
 ```
-proc fact(n) {
-  if n == 0 {
-    return 1
-  }
-  return n * fact(n - 1)
-}
-print(fact(10)) rem Prints 10!
+proc fib(n) => if n < 2 => return n else => return fib(n - 1) + fib(n - 2)
 ```
