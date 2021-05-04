@@ -1,0 +1,38 @@
+struct node {
+	left
+	right
+	value
+}
+struct tree {
+	head
+}
+proc insert(tree, value) {
+	parent = null
+	current = tree.head
+	while current != null {
+		parent = current
+		if value > current.value {
+			current = ref current.right
+		}
+		else {
+			current = ref current.left
+		}
+	}
+	if parent == null {
+		tree.head = new node
+		tree.head.value = value
+	}
+	else {
+		if value > parent.value {
+			parent.right = new node
+			parent.right.value = value
+		}
+		else {
+			parent.left = new node
+			parent.left.value = value
+		}
+	}
+}
+i = 10
+tree = new tree
+while i-- => insert(tree, i)
