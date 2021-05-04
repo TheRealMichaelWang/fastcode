@@ -72,6 +72,11 @@ private:
 
 class interpreter {
 public:
+	int last_error;
+
+	//last token, often is error token
+	token* last_tok;
+
 	interpreter();
 	~interpreter();
 

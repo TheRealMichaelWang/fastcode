@@ -45,13 +45,37 @@ interpreter::~interpreter() {
 
 long double interpreter::run(const char* source, bool interactive_mode) {
 	lexer* lexer = new class lexer(source, std::strlen(source));
-	std::vector<token*> to_execute = lexer->tokenize(interactive_mode);
+	std::vector<token*> to_execute;
+	try {
+		to_execute = lexer->tokenize(interactive_mode);
+	}
+	catch (int syntax_err) {
+		//handle syntax error
+		last_error = syntax_err;
+		handle_syntax_err(syntax_err, lexer->get_pos(), source);
+		return 0;
+	}
 
 	this->break_mode = false;
 
-	value_eval* ret_val = execute_block(to_execute);
-	if (break_mode) {
-		throw ERROR_UNEXPECTED_BREAK;
+	value_eval* ret_val;
+	try {
+		ret_val = execute_block(to_execute);
+		if (break_mode) {
+			throw ERROR_UNEXPECTED_BREAK;
+		}
+	}
+	catch (int runtime_error){
+		last_error = runtime_error;
+		//cleanup
+		while (call_stack.size() > 1)
+		{
+			delete call_stack.top();
+			call_stack.pop();
+		}
+		ret_val = nullptr;
+
+		handle_runtime_err(runtime_error, last_tok);
 	}
 	
 	for (auto it = to_execute.begin(); it != to_execute.end(); ++it) {
@@ -395,6 +419,7 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 
 value_eval* interpreter::execute_block(std::vector<token*> tokens) {
 	for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+		last_tok = *it;
 		switch ((*it)->type)
 		{
 		case TOKEN_BREAK:

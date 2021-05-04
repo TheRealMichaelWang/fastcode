@@ -14,6 +14,10 @@ public:
 		return last_tok == nullptr ? last_char == 0 : last_tok->type == 15 + MAX_TOKEN_LIMIT;
 	}
 
+	inline unsigned int get_pos() {
+		return this->position;
+	}
+
 	std::vector<token*> tokenize(bool interactive_mode);
 private:
 	const char* source;

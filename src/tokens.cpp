@@ -148,7 +148,7 @@ get_reference_token::~get_reference_token() {
 set_token::set_token(variable_access_token* destination, token* value, bool create_static) : token(TOKEN_SET) {
 	this->destination = destination;
 	this->create_static = create_static;
-	if (is_value_tok(value) && value->type != TOKEN_GET_REFERENCE)
+	if (is_value_tok(value))
 		this->value = value;
 	else
 		throw ERROR_UNEXPECTED_TOKEN;

@@ -84,3 +84,18 @@ reference_apartment* get_input(std::vector<value*> arguments, garbage_collector*
 	}
 	return str->get_parent();
 }
+
+void handle_syntax_err(int syntax_error, unsigned int pos, const char* source) {
+	std::cout << "***Syntax Error***" << std::endl;
+	std::cout << "Error Code: " << syntax_error << '\t' << "Lexer Index: " << pos << std::endl;
+	for (int i = (int)pos - (int)10 > 0 ? pos - 10 : 0; i < strlen(source) && i < pos + 10; i++)
+	{
+		std::cout << source[i];
+	}
+	std::cout << std::endl;
+}
+
+void handle_runtime_err(int runtime_error, token* err_tok) {
+	std::cout << std::endl << "***Runtime Error***" << std::endl;
+	std::cout << "Error Code: " << runtime_error << '\t' << "Error Tok Type: " << (int)err_tok->type << std::endl;
+}

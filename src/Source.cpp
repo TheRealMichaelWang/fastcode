@@ -62,8 +62,10 @@ int main(int argc, char** argv) {
 		infile.read(buffer, buffer_length);
 		infile.close();
 		buffer[buffer_length] = '\0';
-		interpreter.run(buffer, false);
+		long double exit_code = interpreter.run(buffer, false);
 		delete[] buffer;
+		if (exit_code != 0)
+			return (int)exit_code;
 	}
 	else {
 		std::cout << "FastCode [Version 2.0, written and designed by Michael Wang]" << std::endl << "Type \"quit()\" to exit the REPL." << std::endl;
