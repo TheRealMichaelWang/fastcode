@@ -15,6 +15,7 @@
 #include "garbage.h"
 #include "builtins.h"
 #include "structure.h"
+#include "hash.h"
 
 class call_frame {
 public:
@@ -86,6 +87,10 @@ public:
 
 	void import_func(const char* identifier, built_in_function function);
 
+	inline void new_constant(const char* identifier, value* val) {
+		this->constants[insecure_hash(identifier)] = val;
+	}
+
 	////you need the garbage collector to allocate non-primitive objects
 	//inline garbage_collector* get_garbage_collector() {
 	//	return &this->garbage_collector;
@@ -101,6 +106,7 @@ private:
 	std::map<unsigned long, built_in_function> built_in_functions;
 
 	std::set<unsigned long> included_files;
+	std::map<unsigned long, value*> constants;
 
 	bool break_mode;
 

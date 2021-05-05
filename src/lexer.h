@@ -3,15 +3,18 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <vector>
+#include <map>
+
 #include "tokens.h"
 
 class lexer {
 public:
-	lexer(const char* source, unsigned long source_length);
+	lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants);
 	~lexer();
 
 	inline bool eos() {
-		return last_tok == nullptr ? last_char == 0 : last_tok->type == 15 + MAX_TOKEN_LIMIT;
+		return last_tok == nullptr ? last_char == 0 : last_tok->type == 16 + MAX_TOKEN_LIMIT;
 	}
 
 	inline unsigned int get_pos() {
@@ -25,6 +28,8 @@ private:
 	unsigned long source_length;
 	char last_char;
 	token* last_tok;
+
+	std::map<unsigned long, value*>* constants;
 
 	//reads the next availible character.
 	char read_char();

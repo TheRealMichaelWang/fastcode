@@ -50,53 +50,53 @@ inline const char* get_err_info(int err) {
 	switch (err)
 	{
 	case ERROR_INVALID_VALUE_TYPE:
-		return "Invalid value type";
+		return "Invalid Value Type";
 	case ERROR_INDEX_OUT_OF_RANGE:
-		return "Index out of range";
+		return "Index Out of Range";
 	case ERROR_PROPERTY_NOT_FOUND:
-		return "Property not found";
+		return "Property Not Found";
 	case ERROR_MUST_HAVE_NUM_TYPE:
-		return "Must have numerical type";
+		return "Must Have Numerical Type";
 	case ERROR_MUST_HAVE_CHAR_TYPE:
-		return "Must have character type";
+		return "Must Have Character Type";
 	case ERROR_MUST_HAVE_COLLECTION_TYPE:
-		return "Must have array/collection type";
+		return "Must Have Array/Collection Type";
 	case ERROR_MUST_HAVE_STRUCT_TYPE:
-		return "Must have structure type";
+		return "Must Have Structure Type";
 	case ERROR_INVALID_ACCESSOR_MODIFIERS:
-		return "Invalid accessor modifiers";
+		return "Invalid Accessor Modifiers";
 	case ERROR_INVALID_BINARY_OPERATOR:
-		return "Invalid binary operator";
+		return "Invalid Binary Operator";
 	case ERROR_INVALID_UNIARY_OPERATOR:
-		return "Invalid unary operator";
+		return "Invalid Unary Operator";
 	case ERROR_UNEXPECTED_TOKEN:
-		return "Unexpected token";
+		return "Unexpected Token";
 	case ERROR_UNEXPECTED_END:
-		return "Unexpected end";
+		return "Unexpected End";
 	case ERROR_UNRECOGNIZED_TOKEN:
-		return "Unrecognized token";
+		return "Unrecognized Token";
 	case ERROR_UNRECOGNIZED_ESCAPE_SEQ:
-		return "Unrecognized escape sequence";
+		return "Unrecognized Escape Sequence";
 	case ERROR_OP_NOT_IMPLEMENTED:
-		return "Operator not implemented";
+		return "Operator Not Implemented";
 	case ERROR_UNRECOGNIZED_VARIABLE:
-		return "Unrecognized variable";
+		return "Unrecognized Variable";
 	case ERROR_DIVIDE_BY_ZERO:
-		return "Cannot divide by zero";
+		return "Cannot Divide By Zero";
 	case ERROR_UNEXPECTED_ARGUMENT_SIZE:
-		return "Unexpected argument size";
+		return "Unexpected Argument Size";
 	case ERROR_UNEXPECTED_BREAK:
-		return "Unexpected break statment";
+		return "Unexpected Break Statment";
 	case ERROR_STRUCT_PROTO_ALREADY_DEFINED:
-		return "Structure prototype already defined";
+		return "Structure Prototype Already Defined";
 	case ERROR_STRUCT_PROTO_NOT_DEFINED:
-		return "Structure prototype not defined";
+		return "Structure Prototype Not Defined";
 	case ERROR_FUNCTION_PROTO_ALREADY_DEFINED:
-		return "Procedure prototype already defined";
+		return "Procedure Prototype Already Defined";
 	case ERROR_FUNCTION_PROTO_NOT_DEFINED:
-		return "Procedure prototype not defined";
+		return "Procedure Prototype Not Defined";
 	case ERROR_CANNOT_INCLUDE_FILE:
-		return "Cannot include file";
+		return "Cannot Include File";
 	default:
 		return "Unkown error?";
 	}

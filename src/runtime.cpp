@@ -22,6 +22,10 @@ call_frame::~call_frame() {
 interpreter::interpreter() {
 	static_var_manager = new variable_manager(&garbage_collector);
 	call_stack.push(new call_frame(nullptr, &garbage_collector));
+	new_constant("true", new value(VALUE_TYPE_NUMERICAL, new long double(1)));
+	new_constant("false", new value(VALUE_TYPE_NUMERICAL, new long double(0)));
+	new_constant("null", new value(VALUE_TYPE_NULL, nullptr));
+	new_constant("pi", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
 	import_func("print", print);
 	import_func("printl", print_line);
 	import_func("input", get_input);
@@ -41,24 +45,32 @@ interpreter::~interpreter() {
 	for (auto it = this->struct_definitions.begin(); it != this->struct_definitions.end(); ++it) {
 		delete (*it).second;
 	}
+
+	for (auto it = this->constants.begin(); it != this->constants.end(); ++it) {
+		delete (*it).second;
+	}
 }
 
 long double interpreter::run(const char* source, bool interactive_mode) {
-	lexer* lexer = new class lexer(source, std::strlen(source));
+	lexer* lexer = nullptr;
 	std::vector<token*> to_execute;
 	try {
+		lexer = new class lexer(source, std::strlen(source), &constants);
 		to_execute = lexer->tokenize(interactive_mode);
+		delete lexer;
 	}
 	catch (int syntax_err) {
+		delete lexer;
 		//handle syntax error
 		last_error = syntax_err;
-		handle_syntax_err(syntax_err, lexer->get_pos(), source);
-		return 0;
+		handle_syntax_err(syntax_err, lexer == nullptr ? 0 : lexer->get_pos(), source);
+		return -1;
 	}
 
 	this->break_mode = false;
 
 	value_eval* ret_val;
+	bool err = false;
 	try {
 		ret_val = execute_block(to_execute);
 		if (break_mode) {
@@ -76,14 +88,16 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 		ret_val = nullptr;
 
 		handle_runtime_err(runtime_error, last_tok);
+		err = true;
 	}
 	
 	for (auto it = to_execute.begin(); it != to_execute.end(); ++it) {
 		if ((*it)->type != TOKEN_FUNC_PROTO && (*it)->type != TOKEN_STRUCT_PROTO)
 			destroy_top_lvl_tok(*it);
 	}
-	delete lexer;
 	
+	if (err)
+		return -1;
 	if (ret_val == nullptr)
 		return 0;
 	long double exit_code = *ret_val->get_value()->get_numerical();
@@ -99,8 +113,10 @@ void interpreter::include(const char* file_path) {
 	included_files.insert(path_hash);
 
 	std::ifstream infile(file_path, std::ifstream::binary);
-	if (!infile.is_open())
+	if (!infile.is_open()) {
+		included_files.erase(path_hash);
 		throw ERROR_CANNOT_INCLUDE_FILE;
+	}
 	infile.seekg(0, std::ios::end);
 	int buffer_length = infile.tellg();
 	infile.seekg(0, std::ios::beg);
@@ -108,8 +124,11 @@ void interpreter::include(const char* file_path) {
 	infile.read(buffer, buffer_length);
 	infile.close();
 	buffer[buffer_length] = '\0';
-	run(buffer, false);
+	unsigned long ret_code = run(buffer, false);
 	delete[] buffer;
+	if (ret_code != 0) {
+		included_files.erase(path_hash); //stop inport guarding on error
+	}
 }
 
 void interpreter::import_func(const char* identifier, built_in_function function) {

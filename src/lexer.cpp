@@ -26,7 +26,9 @@
 
 #define TOKEN_QUICK_BODY 14 + MAX_TOKEN_LIMIT
 
-#define END 15 + MAX_TOKEN_LIMIT
+#define TOKEN_DEFINE_KW 15 + MAX_TOKEN_LIMIT
+
+#define END 16 + MAX_TOKEN_LIMIT
 
 //throws an exception if the token type doesn't match the expected type
 inline void match_tok(token* token, unsigned char type) {
@@ -50,12 +52,15 @@ inline function_call_token* print_encapsulate(token* token) {
 	return new function_call_token(new identifier_token(new char[0], 275790354), args);
 }
 
-lexer::lexer(const char* source, unsigned long source_length) {
+lexer::lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants) {
 	this->source = source;
 	this->source_length = source_length;
 	this->position = 0;
 	this->last_char = 0;
 	this->last_tok = nullptr;
+
+	this->constants = constants;
+
 	read_char();
 	read_token();
 }
@@ -118,27 +123,25 @@ token* lexer::read_token() {
 			return last_tok = new token(TOKEN_REF_KW);
 		case 281511589: //return
 			return last_tok = new token(TOKEN_RETURN_KW);
-		case 2090234533: //true
-			delete[] id_buf;
-			return last_tok = new value_token(new value(VALUE_TYPE_NUMERICAL, new long double(1)));
-		case 258183920: //false
-			delete[] id_buf;
-			return last_tok = new value_token(new value(VALUE_TYPE_NUMERICAL, new long double(0)));
-		case 2090476384: //null
-			delete[] id_buf;
-			return last_tok = new value_token(new value(VALUE_TYPE_NULL, nullptr));
 		case 193489624: //and
 			return last_tok = new token(OP_AND);
 		case 5863782: //or
 			return last_tok = new token(OP_OR);
 		case 4135260141:
 			return last_tok = new token(TOKEN_STATIC_KW);
+		case 275975372:
+			return last_tok = new token(TOKEN_DEFINE_KW);
 		case 1413452809:
 			return last_tok = new token(TOKEN_INCLUDE);
 		case 264645514: //break
 			return last_tok = new token(TOKEN_BREAK);
-		default: 
+		default: {
+			if (constants->count(hash)) {
+				delete[] id_buf;
+				return last_tok = new value_token((*constants->find(hash)).second->clone());
+			}
 			return last_tok = new identifier_token(id_buf, hash);
+		}
 		}
 	}
 	else if (isdigit(last_char)) {
@@ -295,7 +298,9 @@ std::vector<token*> lexer::tokenize(bool interactive_mode) {
 	std::vector<token*> tokens;
 	while (!eos() && last_tok->type != TOKEN_CLOSE_BRACE)
 	{
-		tokens.push_back(tokenize_statement(interactive_mode));
+		token* tok = tokenize_statement(interactive_mode);
+		if(tok != nullptr)
+			tokens.push_back(tok);
 	}
 	if (!eos()) {
 		match_tok(last_tok, TOKEN_CLOSE_BRACE);
@@ -306,6 +311,18 @@ std::vector<token*> lexer::tokenize(bool interactive_mode) {
 token* lexer::tokenize_statement(bool interactive_mode) {
 	switch (last_tok->type)
 	{
+	case TOKEN_DEFINE_KW: {
+		delete last_tok; 
+		match_tok(read_token(), TOKEN_IDENTIFIER);
+		identifier_token* id = (identifier_token*)last_tok;
+		match_tok(read_token(), TOKEN_VALUE);
+		value_token* value_tok = (value_token*)last_tok;
+		constants->insert(std::pair<unsigned long, value*>(id->id_hash, value_tok->get_value()));
+		delete id;
+		delete value_tok;
+		read_token();
+		return nullptr;
+	}
 	case TOKEN_BREAK: {
 		token* tok = last_tok;
 		read_token();

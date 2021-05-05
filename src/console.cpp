@@ -2,6 +2,7 @@
 #include "structure.h"
 #include "collection.h"
 #include "console.h"
+#include "tokens.h"
 #include <iostream>
 
 void print_value(value* val);
@@ -86,13 +87,12 @@ reference_apartment* get_input(std::vector<value*> arguments, garbage_collector*
 }
 
 void handle_syntax_err(int syntax_error, unsigned int pos, const char* source) {
-	std::cout << "***Syntax Error: " << get_err_info(syntax_error) << "***" << std::endl;
+	std::cout << std::endl << "***Syntax Error: " << get_err_info(syntax_error) << "***" << std::endl;
 	std::cout << "Error Code: " << syntax_error << '\t' << "Lexer Index: " << pos << std::endl;
-	for (int i = (int)pos - (int)17 > 0 ? pos - 17 : 0; i < strlen(source) && i < pos + 17; i++)
-	{
+	for (int i = (int)pos - (int)17 > 0 ? pos - 17 : 0; i < strlen(source) && i < pos + 17; i++) {
 		std::cout << source[i];
 	}
-	std::cout << std::endl;
+	std::cout << "" << std::endl;
 }
 
 void handle_runtime_err(int runtime_error, token* err_tok) {
