@@ -349,6 +349,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		}
 		return tokenize_expression();
 	case TOKEN_OPEN_PARAM:
+	case TOKEN_OPEN_BRACKET:
 	case TOKEN_CREATE_ARRAY:
 	case TOKEN_CREATE_STRUCT:
 	case TOKEN_BINARY_OP:

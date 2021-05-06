@@ -27,7 +27,7 @@ reference_apartment* to_numerical(std::vector<value*> arguments, garbage_collect
 	match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
 
 	collection* strcol = (collection*)arguments[0]->ptr;
-	char* str = new char[strcol->size + 1];
+	char* str = new char[strcol->size + 1]; 
 	for (size_t i = 0; i < strcol->size; i++)
 	{
 		value* val = strcol->get_value(i);
