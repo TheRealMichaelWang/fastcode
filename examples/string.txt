@@ -1,0 +1,79 @@
+struct _char_node {
+	char
+	next
+}
+
+struct str_builder {
+	_head
+	size
+}
+
+struct str_lexer {
+	_str
+	_index
+	_last_char
+	size
+}
+
+proc str_builder() {
+	builder = new str_builder
+	builder.size = 0
+	return builder
+}
+
+proc append_char(builder, char) {
+	new_node = new _char_node
+	new_node.char = char
+	new_node.next = builder._head
+	builder._head = new_node
+	builder.size++
+}
+
+proc append_str(builder, str) {
+	i = 0
+	len = len(str)
+	while i < len => append_char(builder, str[i++])
+}
+
+proc build_str(builder) {
+	new_str = array(builder.size)
+	i = builder.size - 1
+	current = builder._head
+	while current != null {
+		new_str[i--] = current.char
+		current = ref current.next
+	}
+	return new_str
+}
+
+proc str_lexer(str) {
+	lexer = new str_lexer
+	lexer._str = str
+	lexer._index = 0
+	lexer.size = len(str)
+	read_char(lexer)
+	return lexer
+}
+
+proc eos(lexer) => return lexer._last_char == 0
+
+proc read_char(lexer) {
+	if lexer._index == lexer.size {
+		return lexer._last_char = 0
+	}
+	return lexer._last_char = lexer._str[lexer._index++]
+}
+
+proc read_tok(lexer) {
+	builder = str_builder()
+	if eos(lexer) => return null
+	while lexer._last_char == ' ' or lexer._last_char == ',' or lexer._last_char == '\n' {
+		if eos(lexer) => return null
+		read_char(lexer)
+	}
+	while lexer._last_char != 0 and lexer._last_char != ' ' and lexer._last_char != ',' and lexer._last_char != '\n' {
+		append_char(builder, lexer._last_char)
+		read_char(lexer)
+	}
+	return build_str(builder)
+}
