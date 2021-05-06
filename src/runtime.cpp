@@ -4,6 +4,9 @@
 #include "operators.h"
 #include "runtime.h"
 #include "hash.h"
+
+//built in top-level functions
+#include "types.h"
 #include "console.h"
 #include "linq.h"
 
@@ -25,7 +28,13 @@ interpreter::interpreter() {
 	new_constant("true", new value(VALUE_TYPE_NUMERICAL, new long double(1)));
 	new_constant("false", new value(VALUE_TYPE_NUMERICAL, new long double(0)));
 	new_constant("null", new value(VALUE_TYPE_NULL, nullptr));
-	new_constant("pi", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
+	new_constant("numtype", new value(VALUE_TYPE_CHAR, new char(VALUE_TYPE_NUMERICAL)));
+	new_constant("chartype", new value(VALUE_TYPE_CHAR, new char(VALUE_TYPE_CHAR)));
+	new_constant("coltype", new value(VALUE_TYPE_CHAR, new char(VALUE_TYPE_COLLECTION)));
+	new_constant("structtype", new value(VALUE_TYPE_CHAR, new char(VALUE_TYPE_STRUCT)));
+	import_func("typeof", get_type);
+	import_func("num", to_numerical);
+	import_func("str", to_string);
 	import_func("print", print);
 	import_func("printl", print_line);
 	import_func("input", get_input);

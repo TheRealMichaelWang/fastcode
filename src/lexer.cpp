@@ -82,12 +82,12 @@ token* lexer::read_token() {
 	while (last_char == ' ' || last_char == '\t' || last_char == '\r' || last_char == '\n' || last_char == ';') {
 		read_char();
 	}
-	if (isalpha(last_char)) {
+	if (isalpha(last_char) || last_char == '_' || last_char == '@') {
 		std::vector<char> id_chars;
 		do {
 			id_chars.push_back(last_char);
 		}
-		while (isalpha(read_char()) || last_char == '_' || last_char == '@');
+		while (isalpha(read_char()) || last_char == '_');
 		char* id_buf = new char[id_chars.size() + 1];
 		int index = 0;
 		for (auto it = id_chars.begin(); it != id_chars.end(); ++it)

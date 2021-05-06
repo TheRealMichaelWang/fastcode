@@ -45,10 +45,18 @@ char* str_append(char* buf, char* toappend) {
 int main(int argc, char** argv) {
 	const char* working_dir = argv[0];
 	interpreter interpreter;
+
+	interpreter.new_constant("pi", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
+	interpreter.new_constant("E", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
+
 	interpreter.import_func("quit", quit_repl);
 	interpreter.import_func("sin", sine);
 	interpreter.import_func("cos", cosine);
 	interpreter.import_func("tan", tangent);
+	interpreter.import_func("asin", inverse_sine);
+	interpreter.import_func("acos", inverse_cosine);
+	interpreter.import_func("atan", inverse_tan);
+
 	if (argc > 1) {
 		std::ifstream infile(argv[1], std::ifstream::binary);
 		if (!infile.is_open()) {
