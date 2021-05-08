@@ -21,7 +21,7 @@ public:
 	reference_apartment* new_apartment(value* initial_value);
 
 	//de-allocates unused variable appartments within the current garbage collection frame
-	unsigned int sweep();
+	unsigned int sweep(bool pop_frame);
 private:
 	unsigned int size;
 	reference_apartment* head;

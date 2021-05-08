@@ -19,7 +19,7 @@ call_frame::call_frame(function_prototype* prototype, class garbage_collector* g
 
 call_frame::~call_frame() {
 	delete manager;
-	garbage_collector->sweep();
+	garbage_collector->sweep(true);
 }
 
 interpreter::interpreter() {
@@ -62,7 +62,7 @@ interpreter::~interpreter() {
 
 long double interpreter::run(const char* source, bool interactive_mode) {
 	lexer* lexer = nullptr;
-	std::vector<token*> to_execute;
+	std::list<token*> to_execute;
 	try {
 		lexer = new class lexer(source, std::strlen(source), &constants);
 		to_execute = lexer->tokenize(interactive_mode);
@@ -164,8 +164,8 @@ void interpreter::set_ref(variable_access_token* access, reference_apartment* re
 			current = call_stack.top()->manager->get_var_reference(access->get_identifier());
 		else
 			throw ERROR_UNRECOGNIZED_VARIABLE;
-		for (auto i = access->modifiers.begin() + 1; i != access->modifiers.end(); ++i) {
-			if (i == access->modifiers.end() - 1) {
+		for (auto i = ++access->modifiers.begin(); i != access->modifiers.end(); ++i) {
+			if (i == --access->modifiers.end()) {
 				if ((*i)->type == TOKEN_IDENTIFIER) {
 					identifier_token* prop = (identifier_token*)(*i);
 					if (current->value->type != VALUE_TYPE_STRUCT)
@@ -219,7 +219,7 @@ reference_apartment* interpreter::get_ref(variable_access_token* access) {
 		current = call_stack.top()->manager->get_var_reference(access->get_identifier());
 	else
 		throw ERROR_UNRECOGNIZED_VARIABLE;
-	for (auto i = access->modifiers.begin() + 1; i != access->modifiers.end(); ++i)
+	for (auto i = ++access->modifiers.begin(); i != access->modifiers.end(); ++i)
 	{
 		if ((*i)->type == TOKEN_IDENTIFIER) {
 			identifier_token* prop = (identifier_token*)(*i);
@@ -275,14 +275,15 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 	case TOKEN_CREATE_ARRAY: {
 		create_array_token* create_array = (create_array_token*)eval_tok;
 		collection* col = new collection(create_array->values.size(), &garbage_collector);
-		for (size_t i = 0; i < create_array->values.size(); i++)
+		unsigned int i = 0;
+		for (auto it = create_array->values.begin(); it != create_array->values.end(); ++it)
 		{
-			value_eval* item_eval = evaluate(create_array->values[i], false);
+			value_eval* item_eval = evaluate(*it, false);
 			if (item_eval->type == VALUE_EVAL_TYPE_REF)
-				col->set_reference(i, item_eval->get_reference());
+				col->set_reference(i++, item_eval->get_reference());
 			else {
 				item_eval->keep();
-				col->set_value(i, item_eval->get_value());
+				col->set_value(i++, item_eval->get_value());
 			}
 			delete item_eval;
 		}
@@ -396,15 +397,17 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 				throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 			call_frame* new_frame = new call_frame(to_execute, &garbage_collector);
 			unsigned int i = 0;
-			for (auto it = func_call->arguments.begin(); it != func_call->arguments.end(); ++it) {
-				value_eval* arg_eval = evaluate(*it, true);
+			auto arg_id_it = to_execute->argument_identifiers.begin();
+			for (auto arg_val_it = func_call->arguments.begin(); arg_val_it != func_call->arguments.end(); ++arg_val_it) {
+				value_eval* arg_eval = evaluate(*arg_val_it, true);
 				if (arg_eval->type == VALUE_EVAL_TYPE_REF)
-					new_frame->manager->declare_var(to_execute->argument_identifiers[i++], arg_eval->get_reference());
+					new_frame->manager->declare_var(*arg_id_it, arg_eval->get_reference());
 				else {
 					arg_eval->keep();
-					new_frame->manager->declare_var(to_execute->argument_identifiers[i++], arg_eval->get_value());
+					new_frame->manager->declare_var(*arg_id_it, arg_eval->get_value());
 				}
 				delete arg_eval;
+				arg_id_it++;
 			}
 			call_stack.push(new_frame);
 			value_eval* ret_val = execute_block(to_execute->tokens);
@@ -422,8 +425,8 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 			return ret_val;
 		}
 		else if (built_in_functions.count(func_call->identifier->id_hash)) {
-			std::vector<value*> arguments;
-			std::vector<bool> can_delete;
+			std::list<value*> arguments;
+			std::list<bool> can_delete;
 			for (auto it = func_call->arguments.begin(); it != func_call->arguments.end(); ++it) {
 				value_eval* arg_eval = evaluate(*it, false);
 				arguments.push_back(arg_eval->get_value());
@@ -447,7 +450,7 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 	throw ERROR_UNEXPECTED_TOKEN;
 }
 
-value_eval* interpreter::execute_block(std::vector<token*> tokens) {
+value_eval* interpreter::execute_block(std::list<token*> tokens) {
 	for (auto it = tokens.begin(); it != tokens.end(); ++it) {
 		last_tok = *it;
 		switch ((*it)->type)
@@ -492,6 +495,7 @@ value_eval* interpreter::execute_block(std::vector<token*> tokens) {
 					}
 					current = current->get_next_conditional(true);
 				}
+				garbage_collector.sweep(false);
 				delete cond_eval;
 			}
 			break;

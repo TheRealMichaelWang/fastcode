@@ -3,7 +3,7 @@
 #ifndef STRUCT_H
 #define STRUCT_H
 
-#include <vector>
+#include <list>
 #include "tokens.h"
 #include "references.h"
 #include "garbage.h"
@@ -15,7 +15,7 @@ public:
 
 	unsigned int property_count;
 
-	structure_prototype(identifier_token* identifier, std::vector<identifier_token*> properties);
+	structure_prototype(identifier_token* identifier, std::list<identifier_token*> properties);
 	~structure_prototype();
 
 	int hash();

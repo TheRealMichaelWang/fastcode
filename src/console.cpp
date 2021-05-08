@@ -61,20 +61,20 @@ void print_value(value* val) {
 	}
 }
 
-reference_apartment* print(std::vector<value*> arguments, garbage_collector* gc) {
+reference_apartment* print(std::list<value*> arguments, garbage_collector* gc) {
 	for (auto it = arguments.begin(); it != arguments.end(); ++it) {
 		print_value(*it);
 	}
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
 
-reference_apartment* print_line(std::vector<value*> arguments, garbage_collector* gc) {
+reference_apartment* print_line(std::list<value*> arguments, garbage_collector* gc) {
 	reference_apartment* appt = print(arguments, gc);
 	std::cout << std::endl;
 	return appt;	
 }
 
-reference_apartment* get_input(std::vector<value*> arguments, garbage_collector* gc) {
+reference_apartment* get_input(std::list<value*> arguments, garbage_collector* gc) {
 	char* input = new char[250];
 	std::cin.getline(input, 250);
 	unsigned int size = strlen(input);

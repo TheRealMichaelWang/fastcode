@@ -9,7 +9,7 @@ garbage_collector::garbage_collector() {
 garbage_collector::~garbage_collector() {
 	while (size > 0)
 	{
-		sweep();
+		sweep(true);
 	}
 }
 
@@ -26,7 +26,7 @@ reference_apartment* garbage_collector::new_apartment(value* initial_value) {
 	}
 }
 
-unsigned int garbage_collector::sweep() {
+unsigned int garbage_collector::sweep(bool pop_frame) {
 	unsigned int destroyed_values = 0;
 	reference_apartment* current = sweep_frames.empty() ? head : sweep_frames.top()->next_apartment;
 	reference_apartment* previous = sweep_frames.empty() ? nullptr : sweep_frames.top();
@@ -49,7 +49,7 @@ unsigned int garbage_collector::sweep() {
 		}
 	}
 	tail = previous;
-	if (!sweep_frames.empty())
+	if (!sweep_frames.empty() && pop_frame)
 		sweep_frames.pop();
 	return destroyed_values;
 }

@@ -3,7 +3,7 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
-#include <vector>
+#include <list>
 #include "errors.h"
 #include "value.h"
 
@@ -78,12 +78,12 @@ private:
 };
 
 struct variable_access_token : token {
-	std::vector<token*> modifiers;
-	variable_access_token(std::vector<token*> modifiers);
+	std::list<token*> modifiers;
+	variable_access_token(std::list<token*> modifiers);
 	~variable_access_token();
 
 	inline identifier_token* get_identifier() {
-		return (identifier_token*)modifiers[0];
+		return (identifier_token*)modifiers.front();
 	}
 };
 
@@ -109,8 +109,8 @@ struct set_token :token {
 
 struct function_call_token :token {
 	identifier_token* identifier;
-	std::vector<token*> arguments;
-	function_call_token(identifier_token* identifier, std::vector<token*> arguments);
+	std::list<token*> arguments;
+	function_call_token(identifier_token* identifier, std::list<token*> arguments);
 	~function_call_token();
 };
 
@@ -122,16 +122,16 @@ struct return_token :token {
 
 struct conditional_token :token {
 	token* condition;
-	std::vector<token*> instructions;
-	conditional_token(unsigned char type, token* condition, std::vector<token*> instructions, conditional_token* next);
+	std::list<token*> instructions;
+	conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next);
 	~conditional_token();
 	conditional_token* next;
 	conditional_token* get_next_conditional(bool condition_val);
 };
 
 struct create_array_token :token {
-	std::vector<token*> values;
-	create_array_token(std::vector<token*> values);
+	std::list<token*> values;
+	create_array_token(std::list<token*> values);
 	~create_array_token();
 };
 
@@ -143,9 +143,9 @@ struct create_struct_token :token {
 
 struct function_prototype :token {
 	identifier_token* identifier;
-	std::vector<identifier_token*> argument_identifiers;
-	std::vector<token*> tokens;
-	function_prototype(identifier_token* identifier, std::vector<identifier_token*> argument_identifiers, std::vector<token*> tokens);
+	std::list<identifier_token*> argument_identifiers;
+	std::list<token*> tokens;
+	function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens);
 	~function_prototype();
 };
 

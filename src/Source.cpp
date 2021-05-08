@@ -8,7 +8,7 @@
 
 bool stop = false;
 
-reference_apartment* quit_repl(std::vector<value*> args, garbage_collector* gc) {
+reference_apartment* quit_repl(std::list<value*> args, garbage_collector* gc) {
 	stop = true;
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 			return (int)exit_code;
 	}
 	else {
-		std::cout << "FastCode [Version 2.0, written and designed by Michael Wang]" << std::endl << "Type \"quit()\" to exit the REPL." << std::endl;
+		std::cout << "FastCode [Version 2.0, written and designed by Michael Wang]" << std::endl << "Type \"quit()\" to exit the REPL, type \"help()\" for help. " << std::endl << "For more information or documentation, go to https://github.com/TheRealMichaelWang/fastcode/wiki." << std::endl;
 
 		while (!stop)
 		{

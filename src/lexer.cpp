@@ -26,7 +26,7 @@
 
 #define TOKEN_QUICK_BODY 14 + MAX_TOKEN_LIMIT
 
-#define TOKEN_DEFINE_KW 15 + MAX_TOKEN_LIMIT
+#define TOKEN_CONST_KW 15 + MAX_TOKEN_LIMIT
 
 #define END 16 + MAX_TOKEN_LIMIT
 
@@ -47,7 +47,7 @@ inline function_call_token* print_encapsulate(token* token) {
 			return call_tok;
 		}
 	}
-	std::vector<class token*> args;
+	std::list<class token*> args;
 	args.push_back(token);
 	return new function_call_token(new identifier_token(new char[0], 275790354), args);
 }
@@ -83,11 +83,11 @@ token* lexer::read_token() {
 		read_char();
 	}
 	if (isalpha(last_char) || last_char == '_' || last_char == '@') {
-		std::vector<char> id_chars;
+		std::list<char> id_chars;
 		do {
 			id_chars.push_back(last_char);
 		}
-		while (isalpha(read_char()) || last_char == '_');
+		while (isalpha(read_char()) || last_char == '_' || last_char == '@');
 		char* id_buf = new char[id_chars.size() + 1];
 		int index = 0;
 		for (auto it = id_chars.begin(); it != id_chars.end(); ++it)
@@ -130,7 +130,7 @@ token* lexer::read_token() {
 		case 4135260141:
 			return last_tok = new token(TOKEN_STATIC_KW);
 		case 275975372:
-			return last_tok = new token(TOKEN_DEFINE_KW);
+			return last_tok = new token(TOKEN_CONST_KW);
 		case 1413452809:
 			return last_tok = new token(TOKEN_INCLUDE);
 		case 264645514: //break
@@ -145,7 +145,7 @@ token* lexer::read_token() {
 		}
 	}
 	else if (isdigit(last_char)) {
-		std::vector<char> num_chars;
+		std::list<char> num_chars;
 		do {
 			num_chars.push_back(last_char);
 		} 
@@ -160,7 +160,7 @@ token* lexer::read_token() {
 		return last_tok = to_ret;
 	}
 	else if (last_char == '\"') {
-		std::vector<token*> chars;
+		std::list<token*> chars;
 		read_char();
 		while (!eos() && last_char != '\"')
 		{
@@ -294,8 +294,8 @@ char lexer::read_data_char() {
 	return ret_char;
 }
 
-std::vector<token*> lexer::tokenize(bool interactive_mode) {
-	std::vector<token*> tokens;
+std::list<token*> lexer::tokenize(bool interactive_mode) {
+	std::list<token*> tokens;
 	while (!eos() && last_tok->type != TOKEN_CLOSE_BRACE)
 	{
 		token* tok = tokenize_statement(interactive_mode);
@@ -311,10 +311,12 @@ std::vector<token*> lexer::tokenize(bool interactive_mode) {
 token* lexer::tokenize_statement(bool interactive_mode) {
 	switch (last_tok->type)
 	{
-	case TOKEN_DEFINE_KW: {
+	case TOKEN_CONST_KW: {
 		delete last_tok; 
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		identifier_token* id = (identifier_token*)last_tok;
+		match_tok(read_token(), TOKEN_SET);
+		delete last_tok;
 		match_tok(read_token(), TOKEN_VALUE);
 		value_token* value_tok = (value_token*)last_tok;
 		constants->insert(std::pair<unsigned long, value*>(id->id_hash, value_tok->get_value()));
@@ -402,7 +404,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		identifier_token* proto_id = (identifier_token*)last_tok;
 		match_tok(read_token(), TOKEN_OPEN_BRACE);
 		delete last_tok;
-		std::vector<identifier_token*> properties;
+		std::list<identifier_token*> properties;
 		while (!eos() && read_token()->type != TOKEN_CLOSE_BRACE)
 		{
 			match_tok(last_tok, TOKEN_IDENTIFIER);
@@ -420,7 +422,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		identifier_token* proto_id = (identifier_token*)last_tok;
 		match_tok(read_token(), TOKEN_OPEN_PARAM);
 		delete last_tok;
-		std::vector<identifier_token*> params;
+		std::list<identifier_token*> params;
 		while (!eos() && read_token()->type != TOKEN_CLOSE_PARAM)
 		{
 			if (last_tok->type == TOKEN_COMMA) {
@@ -444,7 +446,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		delete last_tok;
 		read_token();
 		token* val_tok = tokenize_expression();
-		std::vector<token*> modifiers;
+		std::list<token*> modifiers;
 		modifiers.push_back(id);
 		return new set_token(new variable_access_token(modifiers), val_tok, true);
 	}
@@ -452,11 +454,11 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	throw ERROR_UNEXPECTED_TOKEN;
 }
 
-std::vector<token*> lexer::tokenize_body() {
+std::list<token*> lexer::tokenize_body() {
 	if (last_tok->type == TOKEN_OPEN_BRACE) {
 		delete last_tok;
 		read_token();
-		std::vector<token*> body = tokenize(false);
+		std::list<token*> body = tokenize(false);
 		delete last_tok;
 		read_token();
 		return body;
@@ -464,7 +466,7 @@ std::vector<token*> lexer::tokenize_body() {
 	else if (last_tok->type == TOKEN_QUICK_BODY) {
 		delete last_tok;
 		read_token();
-		std::vector<token*> body;
+		std::list<token*> body;
 		body.push_back(tokenize_statement(false));
 		return body;
 	}
@@ -481,7 +483,7 @@ variable_access_token* lexer::tokenize_var_access(){
 }
 
 variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) {
-	std::vector<token*> toks;
+	std::list<token*> toks;
 	toks.push_back(identifier);
 	while (true)
 	{
@@ -512,7 +514,7 @@ token* lexer::tokenize_value() {
 		//tokenize function call
 		if (last_tok->type == TOKEN_OPEN_PARAM) {
 			delete last_tok;
-			std::vector<token*> arguments;
+			std::list<token*> arguments;
 			while (true)
 			{
 				read_token();
@@ -568,7 +570,7 @@ token* lexer::tokenize_value() {
 	}
 	else if (last_tok->type == TOKEN_OPEN_BRACKET) {
 		delete last_tok;
-		std::vector<token*> values;
+		std::list<token*> values;
 		while (true)
 		{
 			read_token();

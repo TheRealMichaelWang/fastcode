@@ -104,11 +104,11 @@ identifier_token::~identifier_token() {
 	delete[] id_str_ptr;
 }
 
-variable_access_token::variable_access_token(std::vector<token*> modifiers) : token(TOKEN_VAR_ACCESS) {
+variable_access_token::variable_access_token(std::list<token*> modifiers) : token(TOKEN_VAR_ACCESS) {
 	this->modifiers = modifiers;
 	if (this->modifiers.size() < 1)
 		throw ERROR_INVALID_ACCESSOR_MODIFIERS;
-	if (this->modifiers[0]->type != TOKEN_IDENTIFIER)
+	if (this->modifiers.front()->type != TOKEN_IDENTIFIER)
 		throw ERROR_INVALID_ACCESSOR_MODIFIERS;
 	for (auto i = this->modifiers.begin(); i != this->modifiers.end(); ++i) {
 		if ((*i)->type != TOKEN_IDENTIFIER && (*i)->type != TOKEN_INDEX)
@@ -162,7 +162,7 @@ set_token::~set_token() {
 	destroy_value_tok(this->value);
 }
 
-function_call_token::function_call_token(identifier_token* identifier, std::vector<token*> arguments) : token(TOKEN_FUNCTION_CALL){
+function_call_token::function_call_token(identifier_token* identifier, std::list<token*> arguments) : token(TOKEN_FUNCTION_CALL){
 	this->identifier = identifier;
 	this->arguments = arguments;
 	for (auto i = this->arguments.begin(); i != this->arguments.end(); ++i)
@@ -186,7 +186,7 @@ return_token::~return_token() {
 	destroy_value_tok(this->value);
 }
 
-conditional_token::conditional_token(unsigned char type, token* condition, std::vector<token*> instructions, conditional_token* next): token(type) {
+conditional_token::conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next): token(type) {
 	if (!is_control_tok(type) || (type != TOKEN_ELSE && !is_value_tok(condition)))
 		throw ERROR_UNEXPECTED_TOKEN;
 	this->condition = condition;
@@ -222,7 +222,7 @@ conditional_token* conditional_token::get_next_conditional(bool condition_succes
 	throw ERROR_UNRECOGNIZED_TOKEN;
 }
 
-create_array_token::create_array_token(std::vector<token*> values) : token(TOKEN_CREATE_ARRAY){
+create_array_token::create_array_token(std::list<token*> values) : token(TOKEN_CREATE_ARRAY){
 	for (auto i = values.begin(); i != values.end(); ++i)
 		if (!is_value_tok(*i))
 			throw ERROR_UNEXPECTED_TOKEN;
@@ -242,7 +242,7 @@ create_struct_token::~create_struct_token() {
 	delete this->prototype_identifier;
 }
 
-function_prototype::function_prototype(identifier_token* identifier, std::vector<identifier_token*> argument_identifiers, std::vector<token*> tokens) : token(TOKEN_FUNC_PROTO) {
+function_prototype::function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens) : token(TOKEN_FUNC_PROTO) {
 	this->identifier = identifier;
 	this->argument_identifiers = argument_identifiers;
 	this->tokens = tokens;

@@ -132,7 +132,7 @@ private:
 	value_eval* evaluate(token* token, bool force_reference);
 
 	//executes a block of tokens
-	value_eval* execute_block(std::vector<token*> tokens);
+	value_eval* execute_block(std::list<token*> tokens);
 };
 
 #endif // !RUNTIME_H

@@ -3,7 +3,8 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <vector>
+#include <list>
+#include <stack>
 #include <map>
 
 #include "tokens.h"
@@ -21,7 +22,7 @@ public:
 		return this->position;
 	}
 
-	std::vector<token*> tokenize(bool interactive_mode);
+	std::list<token*> tokenize(bool interactive_mode);
 private:
 	const char* source;
 	unsigned long position;
@@ -47,7 +48,7 @@ private:
 	//reads the next top-level token
 	token* read_token();
 	token* tokenize_statement(bool interactive_mode);
-	std::vector<token*> tokenize_body();
+	std::list<token*> tokenize_body();
 	variable_access_token* tokenize_var_access();
 	variable_access_token* tokenize_var_access(identifier_token* identifier);
 	token* tokenize_expression(unsigned char min = 0);

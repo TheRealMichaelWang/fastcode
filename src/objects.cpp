@@ -4,7 +4,7 @@
 #include "references.h"
 #include "garbage.h"
 
-structure_prototype::structure_prototype(identifier_token* identifier, std::vector<identifier_token*> identifiers) : token(TOKEN_STRUCT_PROTO) {
+structure_prototype::structure_prototype(identifier_token* identifier, std::list<identifier_token*> identifiers) : token(TOKEN_STRUCT_PROTO) {
 	this->identifier = identifier;
 	this->property_count = identifiers.size();
 	unsigned int size = property_count;
