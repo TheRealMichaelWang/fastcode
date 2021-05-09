@@ -70,11 +70,17 @@ public:
 		return (const char*)this->id_str_ptr;
 	}
 	unsigned long id_hash;
-	identifier_token(char* identifier);
-	identifier_token(char* identifier, unsigned long id_hash);
+	identifier_token(const char* identifier);
+	identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
 	~identifier_token();
+
+	inline void no_delete() {
+		this->delete_id = false;
+	}
+
 private:
 	char* id_str_ptr;
+	bool delete_id;
 };
 
 struct variable_access_token : token {

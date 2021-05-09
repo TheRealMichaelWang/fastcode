@@ -90,18 +90,19 @@ value_token::~value_token() {
 	delete inner_value_ptr;
 }
 
-identifier_token::identifier_token(char* identifier) : token(TOKEN_IDENTIFIER) {
-	this->id_str_ptr = identifier;
-	this->id_hash = insecure_hash(identifier);
+identifier_token::identifier_token(const char* identifier) : identifier_token((char*)identifier, insecure_hash(identifier), false) {
+
 }
 
-identifier_token::identifier_token(char* identifier, unsigned long id_hash) : token(TOKEN_IDENTIFIER) {
+identifier_token::identifier_token(char* identifier, unsigned long id_hash, bool delete_id) : token(TOKEN_IDENTIFIER) {
 	this->id_str_ptr = identifier;
 	this->id_hash = id_hash;
+	this->delete_id = delete_id;
 }
 
 identifier_token::~identifier_token() {
-	delete[] id_str_ptr;
+	if(delete_id)
+		delete[] id_str_ptr;
 }
 
 variable_access_token::variable_access_token(std::list<token*> modifiers) : token(TOKEN_VAR_ACCESS) {

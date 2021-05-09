@@ -4,7 +4,7 @@
 #define LEXER_H
 
 #include <list>
-#include <stack>
+#include <set>
 #include <map>
 
 #include "tokens.h"
@@ -15,7 +15,7 @@ public:
 	~lexer();
 
 	inline bool eos() {
-		return last_tok == nullptr ? last_char == 0 : last_tok->type == 16 + MAX_TOKEN_LIMIT;
+		return last_tok == nullptr ? last_char == 0 : last_tok->type == 18 + MAX_TOKEN_LIMIT;
 	}
 
 	inline unsigned int get_pos() {
@@ -31,6 +31,8 @@ private:
 	token* last_tok;
 
 	std::map<unsigned long, value*>* constants;
+	std::list<char*> group_stack;
+	std::list<std::set<unsigned long>> group_defined_ids;
 
 	//reads the next availible character.
 	char read_char();
@@ -49,6 +51,7 @@ private:
 	token* read_token();
 	token* tokenize_statement(bool interactive_mode);
 	std::list<token*> tokenize_body();
+	identifier_token* apply_groups(identifier_token* id, bool creating);
 	variable_access_token* tokenize_var_access();
 	variable_access_token* tokenize_var_access(identifier_token* identifier);
 	token* tokenize_expression(unsigned char min = 0);
