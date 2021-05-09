@@ -108,6 +108,8 @@ private:
 	std::set<unsigned long> included_files;
 	std::map<unsigned long, value*> constants;
 
+	std::set<unsigned long> group_excluded_ids;
+
 	bool break_mode;
 
 	void set_ref(variable_access_token* access, reference_apartment* reference);

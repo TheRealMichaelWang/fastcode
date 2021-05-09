@@ -50,12 +50,12 @@ int main(int argc, char** argv) {
 	interpreter.new_constant("E", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
 
 	interpreter.import_func("quit", quit_repl);
-	interpreter.import_func("sin", sine);
-	interpreter.import_func("cos", cosine);
-	interpreter.import_func("tan", tangent);
-	interpreter.import_func("asin", inverse_sine);
-	interpreter.import_func("acos", inverse_cosine);
-	interpreter.import_func("atan", inverse_tan);
+	interpreter.import_func("sin@math", sine);
+	interpreter.import_func("cos@math", cosine);
+	interpreter.import_func("tan@math", tangent);
+	interpreter.import_func("asin@math", inverse_sine);
+	interpreter.import_func("acos@math", inverse_cosine);
+	interpreter.import_func("atan@math", inverse_tan);
 
 	if (argc > 1) {
 		std::ifstream infile(argv[1], std::ifstream::binary);

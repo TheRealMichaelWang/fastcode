@@ -7,11 +7,12 @@
 #include <set>
 #include <map>
 
+#include "builtins.h"
 #include "tokens.h"
 
 class lexer {
 public:
-	lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants);
+	lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants, std::set<unsigned long>* group_excluded_ids);
 	~lexer();
 
 	inline bool eos() {
@@ -32,7 +33,8 @@ private:
 
 	std::map<unsigned long, value*>* constants;
 	std::list<char*> group_stack;
-	std::list<std::set<unsigned long>> group_defined_ids;
+	std::set<unsigned long>* group_excluded_ids;
+	std::list<unsigned long> to_exclude;
 
 	//reads the next availible character.
 	char read_char();

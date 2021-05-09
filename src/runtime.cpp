@@ -64,7 +64,7 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 	lexer* lexer = nullptr;
 	std::list<token*> to_execute;
 	try {
-		lexer = new class lexer(source, std::strlen(source), &constants);
+		lexer = new class lexer(source, std::strlen(source), &constants, &group_excluded_ids);
 		to_execute = lexer->tokenize(interactive_mode);
 		delete lexer;
 	}
@@ -145,6 +145,7 @@ void interpreter::import_func(const char* identifier, built_in_function function
 	if (built_in_functions.count(id_hash))
 		throw ERROR_FUNCTION_PROTO_ALREADY_DEFINED;
 	built_in_functions[id_hash] = function;
+	group_excluded_ids.insert(id_hash);
 }
 
 void interpreter::set_ref(variable_access_token* access, reference_apartment* reference) {

@@ -55,7 +55,7 @@ inline function_call_token* print_encapsulate(token* token) {
 	return new function_call_token(new identifier_token("print"), args);
 }
 
-lexer::lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants) {
+lexer::lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants, std::set<unsigned long>* group_excluded_ids) {
 	this->source = source;
 	this->source_length = source_length;
 	this->position = 0;
@@ -63,6 +63,7 @@ lexer::lexer(const char* source, unsigned long source_length, std::map<unsigned 
 	this->last_tok = nullptr;
 
 	this->constants = constants;
+	this->group_excluded_ids = group_excluded_ids;
 
 	read_char();
 	read_token();
@@ -324,7 +325,6 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		identifier_token* id = (identifier_token*)last_tok;
 		id->no_delete();
 		group_stack.push_back((char*)id->get_identifier());
-		group_defined_ids.push_back(std::set<unsigned long>());
 		delete id;
 		read_token();
 		return nullptr;
@@ -335,7 +335,11 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		}
 		delete[] group_stack.back();
 		group_stack.pop_back();
-		group_defined_ids.pop_back();
+		for (auto i = to_exclude.begin(); i != to_exclude.end(); ++i)
+		{
+			group_excluded_ids->insert(*i);
+		}
+		to_exclude.clear();
 		read_token();
 		return nullptr; 
 	case TOKEN_CONST_KW: {
@@ -535,11 +539,18 @@ variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) 
 }
 
 identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
-	if (group_stack.empty() || (!creating && !group_defined_ids.back().count(id->id_hash)))
+	if (group_stack.empty()) {
+		if (creating) {
+			group_excluded_ids->insert(id->id_hash);
+		}
 		return id;
+	}
+	else if(group_excluded_ids->count(id->id_hash)) {
+		return id;
+	}
+
 	char* base_id = (char*)id->get_identifier();
 	id->no_delete();
-	group_defined_ids.back().insert(id->id_hash);
 	delete id;
 
 	std::list<char> chars;
@@ -559,7 +570,12 @@ identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
 		id_buf[i++] = (*it);
 	id_buf[i] = 0;
 
-	return new identifier_token(id_buf, insecure_hash(id_buf));
+	identifier_token* new_id = new identifier_token(id_buf, insecure_hash(id_buf));
+
+	if (creating)
+		to_exclude.push_back(new_id->id_hash);
+
+	return new_id;
 }
 
 token* lexer::tokenize_value() {
