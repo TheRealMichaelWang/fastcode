@@ -2,7 +2,7 @@
 #include "builtins.h"
 #include "math.h"
 
-reference_apartment* abs(std::list<value*> arguments, garbage_collector* gc) {
+reference_apartment* numabs(std::list<value*> arguments, garbage_collector* gc) {
 	match_arg_len(arguments, 1);
 	match_arg_type(arguments.front(), VALUE_TYPE_NUMERICAL);
 	return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(abs(*arguments.front()->get_numerical()))));

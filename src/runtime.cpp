@@ -1,5 +1,4 @@
 #include <fstream>
-#include "lexer.h"
 #include "collection.h"
 #include "operators.h"
 #include "runtime.h"
@@ -54,17 +53,13 @@ interpreter::~interpreter() {
 	for (auto it = this->struct_definitions.begin(); it != this->struct_definitions.end(); ++it) {
 		delete (*it).second;
 	}
-
-	for (auto it = this->constants.begin(); it != this->constants.end(); ++it) {
-		delete (*it).second;
-	}
 }
 
 long double interpreter::run(const char* source, bool interactive_mode) {
 	lexer* lexer = nullptr;
 	std::list<token*> to_execute;
 	try {
-		lexer = new class lexer(source, std::strlen(source), &constants, &group_excluded_ids);
+		lexer = new class lexer(source, std::strlen(source), &lexer_state);
 		to_execute = lexer->tokenize(interactive_mode);
 		delete lexer;
 	}
@@ -88,6 +83,8 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 	}
 	catch (int runtime_error){
 		last_error = runtime_error;
+		
+		handle_runtime_err(runtime_error, last_tok);
 		//cleanup
 		while (call_stack.size() > 1)
 		{
@@ -96,7 +93,6 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 		}
 		ret_val = nullptr;
 
-		handle_runtime_err(runtime_error, last_tok);
 		err = true;
 	}
 	
@@ -106,7 +102,7 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 	}
 	
 	if (err)
-		return -1;
+		return -abs(last_error);
 	if (ret_val == nullptr)
 		return 0;
 	long double exit_code = *ret_val->get_value()->get_numerical();
@@ -145,7 +141,7 @@ void interpreter::import_func(const char* identifier, built_in_function function
 	if (built_in_functions.count(id_hash))
 		throw ERROR_FUNCTION_PROTO_ALREADY_DEFINED;
 	built_in_functions[id_hash] = function;
-	group_excluded_ids.insert(id_hash);
+	lexer_state.namespace_register.insert(id_hash);
 }
 
 void interpreter::set_ref(variable_access_token* access, reference_apartment* reference) {

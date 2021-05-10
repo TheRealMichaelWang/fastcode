@@ -46,10 +46,12 @@ int main(int argc, char** argv) {
 	const char* working_dir = argv[0];
 	interpreter interpreter;
 
-	interpreter.new_constant("pi", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
-	interpreter.new_constant("E", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
+	interpreter.new_constant("pi@math", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
+	interpreter.new_constant("e@math", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
 
 	interpreter.import_func("quit", quit_repl);
+
+	interpreter.import_func("abs", numabs);
 	interpreter.import_func("sin@math", sine);
 	interpreter.import_func("cos@math", cosine);
 	interpreter.import_func("tan@math", tangent);

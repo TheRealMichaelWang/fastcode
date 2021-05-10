@@ -10,9 +10,23 @@
 #include "builtins.h"
 #include "tokens.h"
 
+struct lexer_state {
+	std::map<unsigned long, value*> constants;
+	std::set<unsigned long> namespace_register;
+	std::list<char*> group_stack;
+	std::list<unsigned long> to_exclude;
+
+	~lexer_state() {
+		for (auto it = this->constants.begin(); it != this->constants.end(); ++it) 
+			delete (*it).second;
+		for (auto it = this->group_stack.begin(); it != this->group_stack.end(); ++it)
+			delete (*it);
+	}
+};
+
 class lexer {
 public:
-	lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants, std::set<unsigned long>* group_excluded_ids);
+	lexer(const char* source, unsigned long source_length, lexer_state* lexer_state);
 	~lexer();
 
 	inline bool eos() {
@@ -31,10 +45,7 @@ private:
 	char last_char;
 	token* last_tok;
 
-	std::map<unsigned long, value*>* constants;
-	std::list<char*> group_stack;
-	std::set<unsigned long>* group_excluded_ids;
-	std::list<unsigned long> to_exclude;
+	lexer_state* lexer_state;
 
 	//reads the next availible character.
 	char read_char();

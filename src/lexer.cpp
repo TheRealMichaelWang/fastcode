@@ -55,15 +55,14 @@ inline function_call_token* print_encapsulate(token* token) {
 	return new function_call_token(new identifier_token("print"), args);
 }
 
-lexer::lexer(const char* source, unsigned long source_length, std::map<unsigned long, value*>* constants, std::set<unsigned long>* group_excluded_ids) {
+lexer::lexer(const char* source, unsigned long source_length, struct lexer_state* lexer_state) {
 	this->source = source;
 	this->source_length = source_length;
 	this->position = 0;
 	this->last_char = 0;
 	this->last_tok = nullptr;
 
-	this->constants = constants;
-	this->group_excluded_ids = group_excluded_ids;
+	this->lexer_state = lexer_state;
 
 	read_char();
 	read_token();
@@ -144,9 +143,9 @@ token* lexer::read_token() {
 		case 303295209:
 			return last_tok = new token(TOKEN_END_GROUP);
 		default: {
-			if (constants->count(hash)) {
+			if (lexer_state->constants.count(hash)) {
 				delete[] id_buf;
-				return last_tok = new value_token((*constants->find(hash)).second->clone());
+				return last_tok = new value_token((*lexer_state->constants.find(hash)).second->clone());
 			}
 			return last_tok = new identifier_token(id_buf, hash);
 		}
@@ -324,22 +323,20 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		identifier_token* id = (identifier_token*)last_tok;
 		id->no_delete();
-		group_stack.push_back((char*)id->get_identifier());
+		lexer_state->group_stack.push_back((char*)id->get_identifier());
 		delete id;
 		read_token();
 		return nullptr;
 	}
 	case TOKEN_END_GROUP:
-		if (group_stack.empty()) {
+		if (lexer_state->group_stack.empty()) {
 			throw ERROR_UNEXPECTED_TOKEN;
 		}
-		delete[] group_stack.back();
-		group_stack.pop_back();
-		for (auto i = to_exclude.begin(); i != to_exclude.end(); ++i)
-		{
-			group_excluded_ids->insert(*i);
-		}
-		to_exclude.clear();
+		delete[] lexer_state->group_stack.back();
+		lexer_state->group_stack.pop_back();
+		for (auto i = lexer_state->to_exclude.begin(); i != lexer_state->to_exclude.end(); ++i)
+			lexer_state->namespace_register.insert(*i);
+		lexer_state->to_exclude.clear();
 		read_token();
 		return nullptr; 
 	case TOKEN_CONST_KW: {
@@ -350,7 +347,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_VALUE);
 		value_token* value_tok = (value_token*)last_tok;
-		constants->insert(std::pair<unsigned long, value*>(id->id_hash, value_tok->get_value()));
+		lexer_state->constants.insert(std::pair<unsigned long, value*>(id->id_hash, value_tok->get_value()));
 		delete id;
 		delete value_tok;
 		read_token();
@@ -539,13 +536,13 @@ variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) 
 }
 
 identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
-	if (group_stack.empty()) {
+	if (lexer_state->group_stack.empty()) {
 		if (creating) {
-			group_excluded_ids->insert(id->id_hash);
+			lexer_state->namespace_register.insert(id->id_hash);
 		}
 		return id;
 	}
-	else if(group_excluded_ids->count(id->id_hash)) {
+	else if(lexer_state->namespace_register.count(id->id_hash)) {
 		return id;
 	}
 
@@ -558,7 +555,7 @@ identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
 	for (size_t i = 0; i < strlen(base_id); i++)
 		chars.push_back(base_id[i]);
 
-	for (auto group_kw = group_stack.rbegin(); group_kw != group_stack.rend(); ++group_kw) {
+	for (auto group_kw = lexer_state->group_stack.rbegin(); group_kw != lexer_state->group_stack.rend(); ++group_kw) {
 		chars.push_back('@');
 		for (size_t i = 0; i < strlen(*group_kw); i++)
 			chars.push_back((*group_kw)[i]);
@@ -573,7 +570,7 @@ identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
 	identifier_token* new_id = new identifier_token(id_buf, insecure_hash(id_buf));
 
 	if (creating)
-		to_exclude.push_back(new_id->id_hash);
+		lexer_state->to_exclude.push_back(new_id->id_hash);
 
 	return new_id;
 }
