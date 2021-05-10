@@ -640,9 +640,14 @@ token* lexer::tokenize_value() {
 	else if (last_tok->type == TOKEN_OPEN_BRACKET) {
 		delete last_tok;
 		std::list<token*> values;
+		
 		while (true)
 		{
 			read_token();
+
+			if (last_tok->type == TOKEN_CLOSE_BRACKET)
+				break;
+
 			values.push_back(tokenize_expression());
 			if (last_tok->type != TOKEN_COMMA) {
 				break;

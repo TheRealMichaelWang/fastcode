@@ -92,11 +92,6 @@ public:
 		this->lexer_state.constants[insecure_hash(identifier)] = val;
 	}
 
-	////you need the garbage collector to allocate non-primitive objects
-	//inline garbage_collector* get_garbage_collector() {
-	//	return &this->garbage_collector;
-	//}
-
 private:
 	variable_manager* static_var_manager;
 	garbage_collector garbage_collector;
