@@ -12,9 +12,7 @@
 
 struct lexer_state {
 	std::map<unsigned long, value*> constants;
-	std::set<unsigned long> namespace_register;
 	std::list<char*> group_stack;
-	std::list<unsigned long> to_exclude;
 
 	~lexer_state() {
 		for (auto it = this->constants.begin(); it != this->constants.end(); ++it) 
@@ -64,7 +62,7 @@ private:
 	token* read_token();
 	token* tokenize_statement(bool interactive_mode);
 	std::list<token*> tokenize_body();
-	identifier_token* apply_groups(identifier_token* id, bool creating);
+	identifier_token* apply_groups(identifier_token* id);
 	variable_access_token* tokenize_var_access();
 	variable_access_token* tokenize_var_access(identifier_token* identifier);
 	token* tokenize_expression(unsigned char min = 0);

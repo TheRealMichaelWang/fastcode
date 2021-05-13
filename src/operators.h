@@ -60,7 +60,7 @@ inline bool is_binary_operator(unsigned char op_type) {
 }
 
 inline bool is_uniary_operator(unsigned char op_type) {
-	return (op_type - STD_OP_TOK_OFFSET) > 50;
+	return (op_type - STD_OP_TOK_OFFSET) >= 50;
 }
 
 value* evaluate_binary_op(unsigned char op, value* a, value* b);

@@ -14,12 +14,8 @@ reference_apartment* to_string(std::list<value*> arguments, garbage_collector* g
 	
 	std::string str = std::to_string(num);
 	
-	collection* strcol = new collection(str.length(), gc);
-	for (size_t i = 0; i < str.length(); i++)
-	{
-		strcol->set_value(i, new value(VALUE_TYPE_CHAR, new char(str[i])));
-	}
-	return strcol->get_parent();
+	collection* strcol = from_c_str(str.c_str(), gc);
+	return strcol->get_parent_ref();
 }
 
 reference_apartment* to_numerical(std::list<value*> arguments, garbage_collector* gc) {
@@ -27,14 +23,7 @@ reference_apartment* to_numerical(std::list<value*> arguments, garbage_collector
 	match_arg_type(arguments.front(), VALUE_TYPE_COLLECTION);
 
 	collection* strcol = (collection*)arguments.front()->ptr;
-	char* str = new char[strcol->size + 1]; 
-	for (size_t i = 0; i < strcol->size; i++)
-	{
-		value* val = strcol->get_value(i);
-		match_arg_type(val, VALUE_TYPE_CHAR);
-		str[i] = *val->get_char();
-	}
-	str[strcol->size] = 0;
+	char* str = to_c_str(arguments.front());
 
 	long double num = std::strtold(str, NULL);
 	delete[] str;

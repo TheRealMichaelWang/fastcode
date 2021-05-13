@@ -110,9 +110,9 @@ value* evaluate_uniary_op(unsigned char op, value* a) {
 		throw ERROR_UNEXPECTED_TOKEN;
 	switch (op) {
 	case OP_INVERT:
-		if (a->type != VALUE_TYPE_NUMERICAL)
-			throw ERROR_MUST_HAVE_NUM_TYPE;
-		return new value(VALUE_TYPE_NUMERICAL, new long double(*a->get_numerical() == 0 ? 1 : 0));
+		/*if (a->type != VALUE_TYPE_NUMERICAL)
+			throw ERROR_MUST_HAVE_NUM_TYPE;*/
+		return new value(VALUE_TYPE_NUMERICAL, new long double(a->hash() == 0 ? 1 : 0));
 	case OP_NEGATE:
 		if (a->type != VALUE_TYPE_NUMERICAL)
 			throw ERROR_MUST_HAVE_NUM_TYPE;

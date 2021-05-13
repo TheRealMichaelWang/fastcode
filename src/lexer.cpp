@@ -334,9 +334,6 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		}
 		delete[] lexer_state->group_stack.back();
 		lexer_state->group_stack.pop_back();
-		for (auto i = lexer_state->to_exclude.begin(); i != lexer_state->to_exclude.end(); ++i)
-			lexer_state->namespace_register.insert(*i);
-		lexer_state->to_exclude.clear();
 		read_token();
 		return nullptr; 
 	case TOKEN_CONST_KW: {
@@ -386,6 +383,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	case TOKEN_UNIARY_OP:
 	case TOKEN_VALUE:
 	case OP_SUBTRACT:
+	case OP_INVERT:
 		if (interactive_mode) {
 			return print_encapsulate(tokenize_expression());
 		}
@@ -429,7 +427,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	case TOKEN_STRUCT_KW: {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
-		identifier_token* proto_id = apply_groups((identifier_token*)last_tok, true);
+		identifier_token* proto_id = apply_groups((identifier_token*)last_tok);
 		match_tok(read_token(), TOKEN_OPEN_BRACE);
 		delete last_tok;
 		std::list<identifier_token*> properties;
@@ -447,7 +445,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	case TOKEN_FUNC_KW: {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
-		identifier_token* proto_id = apply_groups((identifier_token*)last_tok, true);
+		identifier_token* proto_id = apply_groups((identifier_token*)last_tok);
 		match_tok(read_token(), TOKEN_OPEN_PARAM);
 		delete last_tok;
 		std::list<identifier_token*> params;
@@ -535,17 +533,7 @@ variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) 
 	return new variable_access_token(toks);
 }
 
-identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
-	if (lexer_state->group_stack.empty()) {
-		if (creating) {
-			lexer_state->namespace_register.insert(id->id_hash);
-		}
-		return id;
-	}
-	else if(lexer_state->namespace_register.count(id->id_hash)) {
-		return id;
-	}
-
+identifier_token* lexer::apply_groups(identifier_token* id) {
 	char* base_id = (char*)id->get_identifier();
 	id->no_delete();
 	delete id;
@@ -568,9 +556,6 @@ identifier_token* lexer::apply_groups(identifier_token* id, bool creating) {
 	id_buf[i] = 0;
 
 	identifier_token* new_id = new identifier_token(id_buf, insecure_hash(id_buf));
-
-	if (creating)
-		lexer_state->to_exclude.push_back(new_id->id_hash);
 
 	return new_id;
 }
@@ -597,7 +582,6 @@ token* lexer::tokenize_value() {
 			match_tok(last_tok, TOKEN_CLOSE_PARAM);
 			delete last_tok;
 			read_token();
-			identifier = apply_groups(identifier, false);
 			return new function_call_token(identifier, arguments);
 		}
 		else 
@@ -662,7 +646,7 @@ token* lexer::tokenize_value() {
 	else if (last_tok->type == TOKEN_NEW_KW) {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
-		create_struct_token* new_struct = new create_struct_token(apply_groups((identifier_token*)last_tok, false));
+		create_struct_token* new_struct = new create_struct_token((identifier_token*)last_tok);
 		read_token();
 		return new_struct;
 	}

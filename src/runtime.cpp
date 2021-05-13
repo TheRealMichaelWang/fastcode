@@ -6,7 +6,7 @@
 
 //built in top-level functions
 #include "types.h"
-#include "console.h"
+#include "io.h"
 #include "linq.h"
 
 call_frame::call_frame(function_prototype* prototype, class garbage_collector* garbage_collector) {
@@ -39,6 +39,9 @@ interpreter::interpreter() {
 	import_func("input", get_input);
 	import_func("array", allocate_array);
 	import_func("len", get_length);
+	import_func("read@file", file_read_text);
+	import_func("write@file", file_write_text);
+	import_func("count@linq", count_instances);
 }
 
 interpreter::~interpreter() {
@@ -84,15 +87,19 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 	catch (int runtime_error){
 		last_error = runtime_error;
 		
-		handle_runtime_err(runtime_error, last_tok);
+		std::stack<function_prototype*> toprint;
 		//cleanup
 		while (call_stack.size() > 1)
 		{
+			toprint.push(call_stack.top()->prototype);
 			delete call_stack.top();
 			call_stack.pop();
 		}
-		ret_val = nullptr;
 
+		print_call_stack(toprint);
+		handle_runtime_err(runtime_error, last_tok);
+		
+		ret_val = nullptr;
 		err = true;
 	}
 	
@@ -128,7 +135,7 @@ void interpreter::include(const char* file_path) {
 	char* buffer = new char[buffer_length + 1];
 	infile.read(buffer, buffer_length);
 	infile.close();
-	buffer[buffer_length] = '\0';
+	buffer[buffer_length] = 0;
 	unsigned long ret_code = run(buffer, false);
 	delete[] buffer;
 	if (ret_code != 0) {
@@ -141,7 +148,6 @@ void interpreter::import_func(const char* identifier, built_in_function function
 	if (built_in_functions.count(id_hash))
 		throw ERROR_FUNCTION_PROTO_ALREADY_DEFINED;
 	built_in_functions[id_hash] = function;
-	lexer_state.namespace_register.insert(id_hash);
 }
 
 void interpreter::set_ref(variable_access_token* access, reference_apartment* reference) {
@@ -284,7 +290,7 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 			}
 			delete item_eval;
 		}
-		return new value_eval(col->get_parent());
+		return new value_eval(col->get_parent_ref());
 	}
 	case TOKEN_SET: {
 		set_token* set_tok = (set_token*)eval_tok;

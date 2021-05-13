@@ -37,7 +37,7 @@ public:
 
 	collection* clone(reference_apartment* parent_reference);
 
-	inline reference_apartment* get_parent() {
+	inline reference_apartment* get_parent_ref() {
 		return this->parent_reference;
 	}
 
