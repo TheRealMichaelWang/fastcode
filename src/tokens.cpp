@@ -235,12 +235,12 @@ create_array_token::~create_array_token() {
 		destroy_value_tok(*i);
 }
 
-create_struct_token::create_struct_token(identifier_token* prototype_identifier) : token(TOKEN_CREATE_STRUCT){
-	this->prototype_identifier = prototype_identifier;
+create_struct_token::create_struct_token(identifier_token* identifier) : token(TOKEN_CREATE_STRUCT){
+	this->identifier = identifier;
 }
 
 create_struct_token::~create_struct_token() {
-	delete this->prototype_identifier;
+	delete this->identifier;
 }
 
 function_prototype::function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens) : token(TOKEN_FUNC_PROTO) {

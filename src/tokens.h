@@ -6,6 +6,7 @@
 #include <list>
 #include "errors.h"
 #include "value.h"
+#include "hash.h"
 
 
 //value and accessor tokens 0-4
@@ -69,6 +70,15 @@ public:
 	inline const char* get_identifier() {
 		return (const char*)this->id_str_ptr;
 	}
+
+	inline void set_c_str(char* id_str) {
+		if(delete_id)
+			delete[] this->id_str_ptr;
+		delete_id = true;
+		this->id_str_ptr = id_str;
+		this->id_hash = insecure_hash(id_str);
+	}
+
 	unsigned long id_hash;
 	identifier_token(const char* identifier);
 	identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
@@ -142,8 +152,8 @@ struct create_array_token :token {
 };
 
 struct create_struct_token :token {
-	identifier_token* prototype_identifier;
-	create_struct_token(identifier_token* prototype_identifier);
+	identifier_token* identifier;
+	create_struct_token(identifier_token* identifier);
 	~create_struct_token();
 };
 

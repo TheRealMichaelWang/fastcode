@@ -28,7 +28,7 @@
 
 #define TOKEN_CONST_KW 15 + MAX_TOKEN_LIMIT
 
-#define TOKEN_BEGIN_GROUP 16 + MAX_TOKEN_LIMIT
+#define TOKEN_GROUP 16 + MAX_TOKEN_LIMIT
 #define TOKEN_END_GROUP 17 + MAX_TOKEN_LIMIT
 
 #define END 18 + MAX_TOKEN_LIMIT
@@ -139,7 +139,7 @@ token* lexer::read_token() {
 		case 264645514: //break
 			return last_tok = new token(TOKEN_BREAK);
 		case 271304754:
-			return last_tok = new token(TOKEN_BEGIN_GROUP);
+			return last_tok = new token(TOKEN_GROUP);
 		case 303295209:
 			return last_tok = new token(TOKEN_END_GROUP);
 		default: {
@@ -318,24 +318,24 @@ std::list<token*> lexer::tokenize(bool interactive_mode) {
 token* lexer::tokenize_statement(bool interactive_mode) {
 	switch (last_tok->type)
 	{
-	case TOKEN_BEGIN_GROUP: {
+	case TOKEN_GROUP: {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		identifier_token* id = (identifier_token*)last_tok;
-		id->no_delete();
-		lexer_state->group_stack.push_back((char*)id->get_identifier());
-		delete id;
+		
+		lexer_state->new_group(id);
+
 		read_token();
+
 		return nullptr;
 	}
-	case TOKEN_END_GROUP:
-		if (lexer_state->group_stack.empty()) {
-			throw ERROR_UNEXPECTED_TOKEN;
-		}
-		delete[] lexer_state->group_stack.back();
-		lexer_state->group_stack.pop_back();
+	case TOKEN_END_GROUP:{
+		lexer_state->pop_group();
+
 		read_token();
-		return nullptr; 
+
+		return nullptr;
+	}
 	case TOKEN_CONST_KW: {
 		delete last_tok; 
 		match_tok(read_token(), TOKEN_IDENTIFIER);
@@ -427,7 +427,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 	case TOKEN_STRUCT_KW: {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
-		identifier_token* proto_id = apply_groups((identifier_token*)last_tok);
+		identifier_token* proto_id = (identifier_token*)last_tok;
 		match_tok(read_token(), TOKEN_OPEN_BRACE);
 		delete last_tok;
 		std::list<identifier_token*> properties;
@@ -440,12 +440,13 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 			throw ERROR_UNEXPECTED_END;
 		delete last_tok;
 		read_token();
+		lexer_state->declare_id(proto_id);
 		return new structure_prototype(proto_id, properties);
 	}
 	case TOKEN_FUNC_KW: {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
-		identifier_token* proto_id = apply_groups((identifier_token*)last_tok);
+		identifier_token* proto_id = (identifier_token*)last_tok;
 		match_tok(read_token(), TOKEN_OPEN_PARAM);
 		delete last_tok;
 		std::list<identifier_token*> params;
@@ -462,6 +463,7 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 			throw ERROR_UNEXPECTED_TOKEN;
 		delete last_tok;
 		read_token();
+		lexer_state->declare_id(proto_id);
 		return new function_prototype(proto_id, params, tokenize_body()); 
 	}
 	case TOKEN_STATIC_KW: {
@@ -532,34 +534,6 @@ variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) 
 	}
 	return new variable_access_token(toks);
 }
-
-identifier_token* lexer::apply_groups(identifier_token* id) {
-	char* base_id = (char*)id->get_identifier();
-	id->no_delete();
-	delete id;
-
-	std::list<char> chars;
-
-	for (size_t i = 0; i < strlen(base_id); i++)
-		chars.push_back(base_id[i]);
-
-	for (auto group_kw = lexer_state->group_stack.rbegin(); group_kw != lexer_state->group_stack.rend(); ++group_kw) {
-		chars.push_back('@');
-		for (size_t i = 0; i < strlen(*group_kw); i++)
-			chars.push_back((*group_kw)[i]);
-	}
-
-	char* id_buf = new char[chars.size() + 1];
-	unsigned int i = 0;
-	for (auto it = chars.begin(); it != chars.end(); ++it)
-		id_buf[i++] = (*it);
-	id_buf[i] = 0;
-
-	identifier_token* new_id = new identifier_token(id_buf, insecure_hash(id_buf));
-
-	return new_id;
-}
-
 token* lexer::tokenize_value() {
 	if (last_tok->type == TOKEN_IDENTIFIER) {
 		identifier_token* identifier = (identifier_token*)last_tok;
@@ -582,6 +556,7 @@ token* lexer::tokenize_value() {
 			match_tok(last_tok, TOKEN_CLOSE_PARAM);
 			delete last_tok;
 			read_token();
+			this->lexer_state->reference_id(identifier);
 			return new function_call_token(identifier, arguments);
 		}
 		else 
@@ -647,6 +622,7 @@ token* lexer::tokenize_value() {
 		delete last_tok;
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		create_struct_token* new_struct = new create_struct_token((identifier_token*)last_tok);
+		this->lexer_state->reference_id(new_struct->identifier);
 		read_token();
 		return new_struct;
 	}
@@ -680,4 +656,29 @@ token* lexer::tokenize_expression(unsigned char min) {
 		lhs = new binary_operator_token(lhs, rhs, op);
 	}
 	return lhs;
+}
+
+void group::proc_id(identifier_token* id) {
+	std::list<char> chars;
+
+	for (int i = 0; i < strlen(id->get_identifier()); i++)
+		chars.push_back(id->get_identifier()[i]);
+
+	group* current = this;
+	while (current != nullptr)
+	{
+		chars.push_back('@');
+		for (int i = 0; i < strlen(identifier->get_identifier()); i++)
+			chars.push_back(identifier->get_identifier()[i]);
+		current = current->parent;
+	}
+
+	char* new_buf = new char[chars.size() + 1];
+	unsigned long in = 0;
+	for (auto i = chars.begin(); i != chars.end(); ++i) {
+		new_buf[in++] = *i;
+	}
+	new_buf[in] = 0;
+
+	id->set_c_str(new_buf);
 }

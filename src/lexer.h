@@ -10,15 +10,72 @@
 #include "builtins.h"
 #include "tokens.h"
 
-struct lexer_state {
-	std::map<unsigned long, value*> constants;
-	std::list<char*> group_stack;
+struct group {
+private:
+	std::set<unsigned long> declerations;
+	std::list<identifier_token*> to_process;
+	identifier_token* identifier;
 
+	void proc_id(identifier_token* id);
+
+public:
+	group* parent;
+
+	group(struct identifier_token* identifier, group* parent = nullptr) {
+		this->identifier = identifier;
+		this->parent = parent;
+	}
+
+	inline void proc_decleration(identifier_token* id) {
+		declerations.insert(id->id_hash);
+		proc_id(id);
+	}
+
+	inline void proc_reference(identifier_token* id) {
+		to_process.push_back(id);
+	}
+
+	~group() {
+		for (auto i = to_process.begin(); i != to_process.end(); ++i) {
+			if (declerations.count((*i)->id_hash))
+				proc_id(*i);
+		}
+	}
+};
+
+struct lexer_state {
+private:
+	group* top_group = nullptr;
+public:
+	std::map<unsigned long, value*> constants;
+	
 	~lexer_state() {
 		for (auto it = this->constants.begin(); it != this->constants.end(); ++it) 
 			delete (*it).second;
-		for (auto it = this->group_stack.begin(); it != this->group_stack.end(); ++it)
-			delete (*it);
+	}
+
+	inline void declare_id(identifier_token* id) {
+		if (top_group != nullptr)
+			top_group->proc_decleration(id);
+	}
+
+	inline void reference_id(identifier_token* id) {
+		if (top_group != nullptr)
+			top_group->proc_reference(id);
+	}
+
+	inline group* current_group() {
+		return this->top_group;
+	}
+
+	inline void new_group(identifier_token* identifier) {
+		top_group = new group(identifier, top_group);
+	}
+
+	inline void pop_group() {
+		group* to_delete = top_group;
+		top_group = top_group->parent;
+		delete to_delete;
 	}
 };
 
@@ -62,7 +119,6 @@ private:
 	token* read_token();
 	token* tokenize_statement(bool interactive_mode);
 	std::list<token*> tokenize_body();
-	identifier_token* apply_groups(identifier_token* id);
 	variable_access_token* tokenize_var_access();
 	variable_access_token* tokenize_var_access(identifier_token* identifier);
 	token* tokenize_expression(unsigned char min = 0);

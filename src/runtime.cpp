@@ -270,9 +270,9 @@ value_eval* interpreter::evaluate(token* eval_tok, bool force_reference) {
 	}
 	case TOKEN_CREATE_STRUCT: {
 		create_struct_token* create_struct = (create_struct_token*)eval_tok;
-		if (!struct_definitions.count(create_struct->prototype_identifier->id_hash))
+		if (!struct_definitions.count(create_struct->identifier->id_hash))
 			throw ERROR_STRUCT_PROTO_NOT_DEFINED;
-		structure* created_struct = new structure(struct_definitions[create_struct->prototype_identifier->id_hash], &garbage_collector);
+		structure* created_struct = new structure(struct_definitions[create_struct->identifier->id_hash], &garbage_collector);
 		return new value_eval(created_struct->get_parent_ref());
 	}
 	case TOKEN_CREATE_ARRAY: {
