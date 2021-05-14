@@ -1,6 +1,7 @@
 #include <fstream>
 #include "collection.h"
 #include "operators.h"
+#include "garbage.h"
 #include "runtime.h"
 #include "hash.h"
 
@@ -102,7 +103,9 @@ long double interpreter::run(const char* source, bool interactive_mode) {
 		ret_val = nullptr;
 		err = true;
 	}
-	
+
+	garbage_collector.sweep(false);
+
 	for (auto it = to_execute.begin(); it != to_execute.end(); ++it) {
 		if ((*it)->type != TOKEN_FUNC_PROTO && (*it)->type != TOKEN_STRUCT_PROTO)
 			destroy_top_lvl_tok(*it);

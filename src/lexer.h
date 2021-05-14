@@ -10,58 +10,107 @@
 #include "builtins.h"
 #include "tokens.h"
 
-struct group {
-private:
-	std::set<unsigned long> declerations;
-	std::list<identifier_token*> to_process;
-	identifier_token* identifier;
-
-	void proc_id(identifier_token* id);
-
-public:
-	group* parent;
-
-	group(struct identifier_token* identifier, group* parent = nullptr) {
-		this->identifier = identifier;
-		this->parent = parent;
-	}
-
-	inline void proc_decleration(identifier_token* id) {
-		declerations.insert(id->id_hash);
-		proc_id(id);
-	}
-
-	inline void proc_reference(identifier_token* id) {
-		to_process.push_back(id);
-	}
-
-	~group() {
-		for (auto i = to_process.begin(); i != to_process.end(); ++i) {
-			if (declerations.count((*i)->id_hash))
-				proc_id(*i);
-		}
-	}
-};
+#define GROUP_TYPE_STRUCT 0
+#define GROUP_TYPE_FUNC 1
+#define GROUP_TYPE_VAR 2
 
 struct lexer_state {
 private:
+	struct identifier_system
+	{
+		std::set<unsigned long> declerations;
+		std::list<identifier_token*> references;
+	};
+
+	struct group {
+	private:
+		identifier_system id_systems[3];
+		identifier_token* identifier;
+
+		inline void proc_id(identifier_token* id) {
+			std::list<char> chars;
+
+			for (int i = 0; i < strlen(id->get_identifier()); i++)
+				chars.push_back(id->get_identifier()[i]);
+
+			group* current = this;
+			while (current != nullptr)
+			{
+				chars.push_back('@');
+				for (int i = 0; i < strlen(current->identifier->get_identifier()); i++)
+					chars.push_back(current->identifier->get_identifier()[i]);
+				current = current->parent;
+			}
+
+			char* new_buf = new char[chars.size() + 1];
+			unsigned long in = 0;
+			for (auto i = chars.begin(); i != chars.end(); ++i) {
+				new_buf[in++] = *i;
+			}
+			new_buf[in] = 0;
+
+			id->set_c_str(new_buf);
+		}
+	public:
+		group* parent;
+
+		group(struct identifier_token* identifier, group* parent = nullptr) {
+			this->identifier = identifier;
+			this->parent = parent;
+		}
+
+		inline void proc_decleration(identifier_token* id, unsigned char type) {
+			id_systems[type].declerations.insert(id->id_hash);
+			proc_id(id);
+		}
+
+		inline void proc_reference(identifier_token* id, unsigned char type) {
+			id_systems[type].references.push_back(id);
+		}
+
+		inline void group_references(bool remall = false) {
+			for (unsigned char type = 0; type < 3; type++)
+			{
+				std::list<std::list<identifier_token*>::iterator> to_remove;
+				for (auto i = id_systems[type].references.begin(); i != id_systems[type].references.end(); ++i) {
+					if (id_systems[type].declerations.count((*i)->id_hash)) {
+						proc_id(*i);
+						if (!remall)
+							to_remove.push_back(i);
+					}
+				}
+				if (remall)
+					id_systems[type].references.clear();
+				else
+					for (auto i = to_remove.begin(); i != to_remove.end(); ++i) {
+						id_systems[type].references.erase(*i);
+					}
+			}
+		}
+
+		~group() {
+			group_references(true);
+			delete identifier;
+		}
+	};
+
 	group* top_group = nullptr;
 public:
-	std::map<unsigned long, value*> constants;
+	std::map<unsigned long, value_token*> constants;
 	
 	~lexer_state() {
 		for (auto it = this->constants.begin(); it != this->constants.end(); ++it) 
 			delete (*it).second;
 	}
 
-	inline void declare_id(identifier_token* id) {
+	inline void declare_id(identifier_token* id, unsigned char type) {
 		if (top_group != nullptr)
-			top_group->proc_decleration(id);
+			top_group->proc_decleration(id, type);
 	}
 
-	inline void reference_id(identifier_token* id) {
+	inline void reference_id(identifier_token* id, unsigned char type) {
 		if (top_group != nullptr)
-			top_group->proc_reference(id);
+			top_group->proc_reference(id, type);
 	}
 
 	inline group* current_group() {
@@ -76,6 +125,14 @@ public:
 		group* to_delete = top_group;
 		top_group = top_group->parent;
 		delete to_delete;
+	}
+
+	inline void group_all_references() {
+		group* current = top_group;
+		while (current != nullptr) {
+			current->group_references();
+			current = current->parent;
+		}
 	}
 };
 

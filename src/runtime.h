@@ -89,7 +89,7 @@ public:
 	void import_func(const char* identifier, built_in_function function);
 
 	inline void new_constant(const char* identifier, value* val) {
-		this->lexer_state.constants[insecure_hash(identifier)] = val;
+		this->lexer_state.constants[insecure_hash(identifier)] = new value_token(val);
 	}
 
 private:

@@ -2,7 +2,7 @@
 #include "hash.h"
 #include "variables.h"
 
-variable_bucket::variable_bucket(unsigned long id_hash, reference_apartment* apartment, variable_bucket* next_bucket) {
+variable_manager::variable_bucket::variable_bucket(unsigned long id_hash, reference_apartment* apartment, variable_bucket* next_bucket) {
 	this->id_hash = id_hash;
 	this->apartment = apartment;
 	this->next_bucket = next_bucket;

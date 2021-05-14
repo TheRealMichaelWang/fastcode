@@ -76,7 +76,7 @@ int structure::hash() {
 	return hash;
 }
 
-collection::collection(unsigned long size, garbage_collector* gc) : collection(size, new reference_apartment(new value(VALUE_TYPE_COLLECTION, this))) {
+collection::collection(unsigned long size, garbage_collector* gc) : collection(size, gc->new_apartment(new value(VALUE_TYPE_COLLECTION, this))) {
 	for (unsigned long i = 0; i < size; i++)
 	{
 		this->inner_collection[i] = gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));

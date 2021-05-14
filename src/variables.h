@@ -9,19 +9,25 @@
 #include "references.h"
 #include "garbage.h"
 
-class variable_bucket {
-public:
-	unsigned long id_hash;
-	reference_apartment* apartment;
-	variable_bucket(unsigned long id_hash, reference_apartment* apartment, variable_bucket* next_bucket = nullptr);
-	variable_bucket* next_bucket;
-};
-
 #define VARIABLE_HASH_BUCKET_SIZE 100
 
 class variable_manager {
+private:
+
+	class variable_bucket {
+	public:
+		unsigned long id_hash;
+		reference_apartment* apartment;
+		variable_bucket(unsigned long id_hash, reference_apartment* apartment, variable_bucket* next_bucket = nullptr);
+		variable_bucket* next_bucket;
+	};
+
+	unsigned int size;
+	garbage_collector* garbage_collector;
+	variable_bucket* hash_buckets[VARIABLE_HASH_BUCKET_SIZE];
+
 public:
-	variable_manager(garbage_collector* garbage_collector);
+	variable_manager(class garbage_collector* garbage_collector);
 	~variable_manager();
 
 	//declares a variable with a value
@@ -93,10 +99,6 @@ public:
 	inline value* get_var_value(identifier_token* identifier) {
 		return get_var_reference(identifier->id_hash)->value;
 	}
-private:
-	unsigned int size;
-	garbage_collector* garbage_collector;
-	variable_bucket* hash_buckets[VARIABLE_HASH_BUCKET_SIZE];
 };
 
 #endif // !VARIABLE_H
