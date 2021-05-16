@@ -13,6 +13,11 @@ reference_apartment* quit_repl(std::list<value*> args, garbage_collector* gc) {
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
 
+reference_apartment* get_help(std::list<value*> args, garbage_collector* gc) {
+	std::cout << "Welcome to FastCode!\n\n\tIf this is your first time using FastCode, we urge you to read the documentation at https://github.com/TheRealMichaelWang/fastcode/wiki, or at least check out the section labled ,A Quick Guide, before reading the entirety of this document."<<std::endl;
+	return gc->new_apartment(new value(VALUE_TYPE_CHAR, new char(' ')));
+}
+
 unsigned int code_checksum(const char* code) {
 	int brackets = 0;
 	int braces = 0;
@@ -50,6 +55,7 @@ int main(int argc, char** argv) {
 	interpreter.new_constant("e@math", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
 
 	interpreter.import_func("quit", quit_repl);
+	interpreter.import_func("help", get_help);
 
 	interpreter.import_func("abs", numabs);
 	interpreter.import_func("sin@math", sine);

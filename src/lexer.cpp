@@ -338,7 +338,9 @@ token* lexer::tokenize_statement(bool interactive_mode) {
 		delete last_tok; 
 		match_tok(read_token(), TOKEN_IDENTIFIER);
 		identifier_token* id = (identifier_token*)last_tok;
-		lexer_state->declare_id(id, GROUP_TYPE_VAR);
+		if (lexer_state->constants.count(id->id_hash)) {
+			delete lexer_state->constants[id->id_hash];
+		}
 		match_tok(read_token(), TOKEN_SET);
 		delete last_tok;
 		match_tok(read_token(), TOKEN_VALUE);
@@ -563,10 +565,17 @@ token* lexer::tokenize_value() {
 		}
 		else 
 		{
+			if (lexer_state->constants.count(identifier->id_hash)) {
+				unsigned long hash = identifier->id_hash;
+				delete identifier;
+				return new value_token(lexer_state->constants[hash]->get_value());
+			}
+
 			if(last_tok->type == TOKEN_SET)
 				this->lexer_state->declare_id(identifier, GROUP_TYPE_VAR);
 			else
 				this->lexer_state->reference_id(identifier, GROUP_TYPE_VAR);
+
 			variable_access_token* var_access = tokenize_var_access(identifier);
 			if (last_tok->type == OP_INCRIMENT) {
 				delete last_tok;
@@ -585,11 +594,6 @@ token* lexer::tokenize_value() {
 				return new set_token(var_access, to_set, false);
 			}
 
-			if (var_access->modifiers.size() <= 1 && lexer_state->constants.count(identifier->id_hash)) {
-				unsigned long hash = identifier->id_hash;
-				delete var_access;
-				return new value_token(lexer_state->constants[hash]->get_value());
-			}
 			return var_access;
 		}
 	}
