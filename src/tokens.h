@@ -8,7 +8,6 @@
 #include "value.h"
 #include "hash.h"
 
-
 //value and accessor tokens 0-4
 #define TOKEN_VALUE 0
 #define TOKEN_IDENTIFIER 1
@@ -48,146 +47,150 @@
 
 #define MAX_TOKEN_LIMIT 75
 
-struct token {
-	unsigned char type;
-	token(unsigned char type);
-};
+namespace fastcode {
+	namespace parsing {
+		struct token {
+			unsigned char type;
+			token(unsigned char type);
+		};
 
-struct value_token :token {
-public:
-	value_token(class value* value);
-	~value_token();
+		struct value_token :token {
+		public:
+			value_token(class value* value);
+			~value_token();
 
-	inline value* get_value() {
-		return this->inner_value_ptr->clone();
+			inline value* get_value() {
+				return this->inner_value_ptr->clone();
+			}
+		private:
+			value* inner_value_ptr;
+		};
+
+		struct identifier_token : token {
+		public:
+			inline const char* get_identifier() {
+				return (const char*)this->id_str_ptr;
+			}
+
+			inline void set_c_str(char* id_str) {
+				if (delete_id)
+					delete[] this->id_str_ptr;
+				delete_id = true;
+				this->id_str_ptr = id_str;
+				this->id_hash = insecure_hash(id_str);
+			}
+
+			unsigned long id_hash;
+			identifier_token(const char* identifier);
+			identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
+			~identifier_token();
+
+			inline void no_delete() {
+				this->delete_id = false;
+			}
+
+		private:
+			char* id_str_ptr;
+			bool delete_id;
+		};
+
+		struct variable_access_token : token {
+			std::list<token*> modifiers;
+			variable_access_token(std::list<token*> modifiers);
+			~variable_access_token();
+
+			inline identifier_token* get_identifier() {
+				return (identifier_token*)modifiers.front();
+			}
+		};
+
+		struct index_token : token {
+			token* value;
+			index_token(token* value);
+			~index_token();
+		};
+
+		struct get_reference_token :token {
+			variable_access_token* var_access;
+			get_reference_token(variable_access_token* var_access);
+			~get_reference_token();
+		};
+
+		struct set_token :token {
+			bool create_static;
+			variable_access_token* destination;
+			token* value;
+			set_token(variable_access_token* destination, token* value, bool create_static);
+			~set_token();
+		};
+
+		struct function_call_token :token {
+			identifier_token* identifier;
+			std::list<token*> arguments;
+			function_call_token(identifier_token* identifier, std::list<token*> arguments);
+			~function_call_token();
+		};
+
+		struct return_token :token {
+			token* value;
+			return_token(token* value);
+			~return_token();
+		};
+
+		struct conditional_token :token {
+			token* condition;
+			std::list<token*> instructions;
+			conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next);
+			~conditional_token();
+			conditional_token* next;
+			conditional_token* get_next_conditional(bool condition_val);
+		};
+
+		struct create_array_token :token {
+			std::list<token*> values;
+			create_array_token(std::list<token*> values);
+			~create_array_token();
+		};
+
+		struct create_struct_token :token {
+			identifier_token* identifier;
+			create_struct_token(identifier_token* identifier);
+			~create_struct_token();
+		};
+
+		struct function_prototype :token {
+			identifier_token* identifier;
+			std::list<identifier_token*> argument_identifiers;
+			std::list<token*> tokens;
+			function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens);
+			~function_prototype();
+		};
+
+		struct include_token :token {
+		public:
+
+			include_token(char* file_path);
+			~include_token();
+
+			inline const char* get_file_path() {
+				return this->file_path;
+			}
+		private:
+			char* file_path;
+		};
+
+		inline bool is_top_level_tok(token* token) {
+			return (token->type > 60 && token->type < 70) || token->type == TOKEN_UNIARY_OP || token->type == TOKEN_INCLUDE;
+		}
+
+		void destroy_top_lvl_tok(token* token);
+
+		void destroy_value_tok(token* val_tok);
+
+		inline bool is_value_tok(token* value) {
+			return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_UNIARY_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
+		}
 	}
-private:
-	value* inner_value_ptr;
-};
-
-struct identifier_token : token {
-public:
-	inline const char* get_identifier() {
-		return (const char*)this->id_str_ptr;
-	}
-
-	inline void set_c_str(char* id_str) {
-		if(delete_id)
-			delete[] this->id_str_ptr;
-		delete_id = true;
-		this->id_str_ptr = id_str;
-		this->id_hash = insecure_hash(id_str);
-	}
-
-	unsigned long id_hash;
-	identifier_token(const char* identifier);
-	identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
-	~identifier_token();
-
-	inline void no_delete() {
-		this->delete_id = false;
-	}
-
-private:
-	char* id_str_ptr;
-	bool delete_id;
-};
-
-struct variable_access_token : token {
-	std::list<token*> modifiers;
-	variable_access_token(std::list<token*> modifiers);
-	~variable_access_token();
-
-	inline identifier_token* get_identifier() {
-		return (identifier_token*)modifiers.front();
-	}
-};
-
-struct index_token : token {
-	token* value;
-	index_token(token* value);
-	~index_token();
-};
-
-struct get_reference_token :token {
-	variable_access_token* var_access;
-	get_reference_token(variable_access_token* var_access);
-	~get_reference_token();
-};
-
-struct set_token :token {
-	bool create_static;
-	variable_access_token* destination;
-	token* value;
-	set_token(variable_access_token* destination, token* value, bool create_static);
-	~set_token();
-};
-
-struct function_call_token :token {
-	identifier_token* identifier;
-	std::list<token*> arguments;
-	function_call_token(identifier_token* identifier, std::list<token*> arguments);
-	~function_call_token();
-};
-
-struct return_token :token {
-	token* value;
-	return_token(token* value);
-	~return_token();
-};
-
-struct conditional_token :token {
-	token* condition;
-	std::list<token*> instructions;
-	conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next);
-	~conditional_token();
-	conditional_token* next;
-	conditional_token* get_next_conditional(bool condition_val);
-};
-
-struct create_array_token :token {
-	std::list<token*> values;
-	create_array_token(std::list<token*> values);
-	~create_array_token();
-};
-
-struct create_struct_token :token {
-	identifier_token* identifier;
-	create_struct_token(identifier_token* identifier);
-	~create_struct_token();
-};
-
-struct function_prototype :token {
-	identifier_token* identifier;
-	std::list<identifier_token*> argument_identifiers;
-	std::list<token*> tokens;
-	function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens);
-	~function_prototype();
-};
-
-struct include_token :token {
-public:
-
-	include_token(char* file_path);
-	~include_token();
-
-	inline const char* get_file_path() {
-		return this->file_path;
-	}
-private:
-	char* file_path;
-};
-
-inline bool is_top_level_tok(token* token) {
-	return (token->type > 60 && token->type < 70) || token->type == TOKEN_UNIARY_OP || token->type == TOKEN_INCLUDE;
-}
-
-void destroy_top_lvl_tok(token* token);
-
-void destroy_value_tok(token* val_tok);
-
-inline bool is_value_tok(token* value) {
-	return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_UNIARY_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
 }
 
 #endif // !TOKENS_H

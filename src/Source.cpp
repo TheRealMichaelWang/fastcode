@@ -6,14 +6,16 @@
 //standard libraries
 #include "math.h"
 
+using namespace fastcode;
+
 bool stop = false;
 
-reference_apartment* quit_repl(std::list<value*> args, garbage_collector* gc) {
+runtime::reference_apartment* quit_repl(std::list<value*> args, runtime::garbage_collector* gc) {
 	stop = true;
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
 
-reference_apartment* get_help(std::list<value*> args, garbage_collector* gc) {
+runtime::reference_apartment* get_help(std::list<value*> args, runtime::garbage_collector* gc) {
 	std::cout << "Welcome to FastCode!\n\n\tIf this is your first time using FastCode, we urge you to read the documentation at https://github.com/TheRealMichaelWang/fastcode/wiki, or at least check out the section labled ,A Quick Guide, before reading the entirety of this document."<<std::endl;
 	return gc->new_apartment(new value(VALUE_TYPE_CHAR, new char(' ')));
 }
@@ -49,7 +51,7 @@ char* str_append(char* buf, char* toappend) {
 
 int main(int argc, char** argv) {
 	const char* working_dir = argv[0];
-	interpreter interpreter;
+	runtime::interpreter interpreter;
 
 	interpreter.new_constant("pi@math", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
 	interpreter.new_constant("e@math", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));
@@ -57,13 +59,14 @@ int main(int argc, char** argv) {
 	interpreter.import_func("quit", quit_repl);
 	interpreter.import_func("help", get_help);
 
-	interpreter.import_func("abs", numabs);
-	interpreter.import_func("sin@math", sine);
-	interpreter.import_func("cos@math", cosine);
-	interpreter.import_func("tan@math", tangent);
-	interpreter.import_func("asin@math", inverse_sine);
-	interpreter.import_func("acos@math", inverse_cosine);
-	interpreter.import_func("atan@math", inverse_tan);
+	interpreter.import_func("abs", builtins::math::numabs);
+	interpreter.import_func("sin@math", builtins::math::sin);
+	interpreter.import_func("cos@math", builtins::math::cos);
+	interpreter.import_func("tan@math", builtins::math::tan);
+	interpreter.import_func("asin@math", builtins::math::asin);
+	interpreter.import_func("acos@math", builtins::math::acos);
+	interpreter.import_func("atan@math", builtins::math::atan);
+	interpreter.import_func("log@math", builtins::math::log);
 
 	if (argc > 1) {
 		std::ifstream infile(argv[1], std::ifstream::binary);
