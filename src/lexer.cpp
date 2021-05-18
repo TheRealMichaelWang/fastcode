@@ -143,6 +143,10 @@ namespace fastcode {
 					return last_tok = new token(TOKEN_GROUP);
 				case 303295209:
 					return last_tok = new token(TOKEN_END_GROUP);
+				case 193499145:
+					while (last_char != '\n')
+						read_char();
+					return read_token();
 				default: {
 					return last_tok = new identifier_token(id_buf, hash);
 				}
