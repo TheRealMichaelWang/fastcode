@@ -1,0 +1,91 @@
+rem strlib
+rem Written by Michael Wang, 2020-2021
+
+rem A library that supports string building and tokenization whilst keeping away from arrays.
+
+group strlib
+
+static whitespace = " \t\r\n"
+
+struct _char_node {
+	char
+	next
+}
+
+struct builder {
+	_head
+	size
+}
+
+struct lexer {
+	_str
+	_index
+	_last_char
+	size
+}
+
+proc builder() {
+	builder = new builder
+	builder.size = 0
+	return builder
+}
+
+proc append_char(builder, char) {
+	new_node = new _char_node
+	new_node.char = char
+	new_node.next = builder._head
+	builder._head = new_node
+	builder.size++
+}
+
+proc append(builder, str) {
+	i = 0
+	len = len(str)
+	while i < len => append_char(builder, str[i++])
+}
+
+proc build(builder) {
+	new_str = array(builder.size)
+	i = builder.size - 1
+	current = builder._head
+	while current != null {
+		new_str[i--] = current.char
+		current = ref current.next
+	}
+	return new_str
+}
+
+proc lexer(str) {
+	lexer = new lexer
+	lexer._str = str
+	lexer._index = 0
+	lexer.size = len(str)
+	lexer._index = 1
+	lexer._last_char = str[0]
+	return lexer
+}
+
+proc eos(lexer) => return lexer._last_char == 0
+
+proc read_char(lexer) {
+	if lexer._index == lexer.size {
+		return lexer._last_char = 0
+	}
+	return lexer._last_char = lexer._str[lexer._index++]
+}
+
+proc read_tok(lexer, stopchars) {
+	builder = builder()
+	if eos(lexer) => return null
+	while count@linq(stopchars, lexer._last_char) {
+		if eos(lexer) => return null
+		read_char(lexer)
+	}
+	while !eos(lexer) and !count@linq(stopchars, lexer._last_char) {
+		append_char(builder, lexer._last_char)
+		read_char(lexer)
+	}
+	return build(builder)
+}
+
+endgroup

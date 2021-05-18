@@ -1,0 +1,67 @@
+rem FastCode Object Notation
+rem Written by Michael Wang, 2020-2021
+
+rem FCON converts FCON strings to FastCode objects.
+
+include "strlib.txt"
+
+group fcon
+
+proc read_obj(lexer) {
+	type = read_tok@strlib(lexer, whitespace@strlib)
+	if type == "NUM" => return num(read_tok@strlib(lexer, whitespace@strlib))
+	elif type == "CHAR" {
+		char_tok = read_tok@strlib(lexer, whitespace@strlib)
+		if char_tok == "!SPACE" => return ' '
+		elif char_tok == "!NEWLINE" => return '\n'
+		elif char_tok == "!TAB" => return '\t'
+		else => return char_tok[0]
+	}
+	elif type == "COL" {
+		len = num(read_tok@strlib(lexer, whitespace@strlib))
+		col = array(len)
+		i = 0
+		while i < len => col[i++] = read_obj(lexer)
+		return col
+	}
+}
+
+proc write_obj(builder, obj) {
+	if typeof(obj) == numtype {
+		append@strlib(builder, "NUM")
+		append_char@strlib(builder, ' ')
+		append@strlib(builder, str(obj))
+	}
+	elif typeof(obj) == chartype {
+		append@strlib(builder, "CHAR")
+		append_char@strlib(builder, ' ')
+		if obj == ' ' => append@strlib(builder, "!SPACE")
+		elif obj == '\n' => append@strlib(builder, "!NEWLINE")
+		elif obj == '\t' => append@strlib(builder, "!TAB")
+		else => append_char@strlib(builder, obj)
+	}
+	elif typeof(obj) == coltype {
+		append@strlib(builder, "COL")
+		append_char@strlib(builder, ' ')
+		len = len(obj)
+		append@strlib(builder, str(len))
+		i = 0
+		while i < len {
+			append_char@strlib(builder, ' ')
+			write_obj(builder, obj[i++])
+		}
+	}
+}
+
+proc obj(str) {
+	lexer = lexer@strlib(str)
+	return read_obj(lexer)
+}
+
+endgroup
+
+proc fcon(obj) {
+	builder = builder@strlib()
+	write_obj@fcon(builder, obj)
+	return build@strlib(builder)
+}
