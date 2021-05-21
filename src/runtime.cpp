@@ -42,6 +42,8 @@ namespace fastcode {
 			import_func("input", builtins::get_input);
 			import_func("array", builtins::allocate_array);
 			import_func("len", builtins::get_length);
+			import_func("range", builtins::get_range);
+			import_func("handle", builtins::get_handle);
 			import_func("read@file", builtins::file_read_text);
 			import_func("write@file", builtins::file_write_text);
 			import_func("count@linq", builtins::count_instances);
@@ -146,13 +148,6 @@ namespace fastcode {
 			if (ret_code != 0) {
 				included_files.erase(path_hash); //stop inport guarding on error
 			}
-		}
-
-		void interpreter::import_func(const char* identifier, builtins::built_in_function function) {
-			unsigned long id_hash = insecure_hash(identifier);
-			if (built_in_functions.count(id_hash))
-				throw ERROR_FUNCTION_PROTO_ALREADY_DEFINED;
-			built_in_functions[id_hash] = function;
 		}
 
 		void interpreter::set_ref(parsing::variable_access_token* access, reference_apartment* reference) {
@@ -401,21 +396,37 @@ namespace fastcode {
 				parsing::function_call_token* func_call = (parsing::function_call_token*)eval_tok;
 				if (function_definitions.count(func_call->identifier->id_hash)) {
 					parsing::function_prototype* to_execute = function_definitions[func_call->identifier->id_hash];
-					if (func_call->arguments.size() != to_execute->argument_identifiers.size())
-						throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 					call_frame* new_frame = new call_frame(to_execute, &garbage_collector);
-					unsigned int i = 0;
-					auto arg_id_it = to_execute->argument_identifiers.begin();
-					for (auto arg_val_it = func_call->arguments.begin(); arg_val_it != func_call->arguments.end(); ++arg_val_it) {
-						value_eval* arg_eval = evaluate(*arg_val_it, true);
-						if (arg_eval->type == VALUE_EVAL_TYPE_REF)
-							new_frame->manager->declare_var(*arg_id_it, arg_eval->get_reference());
-						else {
-							arg_eval->keep();
-							new_frame->manager->declare_var(*arg_id_it, arg_eval->get_value());
+					if (to_execute->is_params()) {
+						unsigned int i = 0;
+						collection* param_args = new collection(func_call->arguments.size(), &garbage_collector);
+						for (auto arg_val_it = func_call->arguments.begin(); arg_val_it != func_call->arguments.end(); ++arg_val_it) {
+							value_eval* arg_eval = evaluate(*arg_val_it, true);
+							if (arg_eval->type == VALUE_EVAL_TYPE_REF)
+								param_args->set_reference(i++, arg_eval->get_reference());
+							else {
+								arg_eval->keep();
+								param_args->set_value(i++, arg_eval->get_value());
+							}
+							delete arg_eval;
 						}
-						delete arg_eval;
-						arg_id_it++;
+						new_frame->manager->declare_var(470537897, param_args->get_parent_ref());
+					}
+					else {
+						if (func_call->arguments.size() != to_execute->argument_identifiers.size())
+							throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
+						auto arg_id_it = to_execute->argument_identifiers.begin();
+						for (auto arg_val_it = func_call->arguments.begin(); arg_val_it != func_call->arguments.end(); ++arg_val_it) {
+							value_eval* arg_eval = evaluate(*arg_val_it, true);
+							if (arg_eval->type == VALUE_EVAL_TYPE_REF)
+								new_frame->manager->declare_var(*arg_id_it, arg_eval->get_reference());
+							else {
+								arg_eval->keep();
+								new_frame->manager->declare_var(*arg_id_it, arg_eval->get_value());
+							}
+							delete arg_eval;
+							arg_id_it++;
+						}
 					}
 					call_stack.push(new_frame);
 					value_eval* ret_val = execute_block(to_execute->tokens);
@@ -506,6 +517,31 @@ namespace fastcode {
 						garbage_collector.sweep(false);
 						delete cond_eval;
 					}
+					break;
+				}
+				case TOKEN_FOR: {
+					parsing::for_token* for_tok = (parsing::for_token*)*it;
+					value_eval* to_iterate_eval = evaluate(for_tok->collection, true);
+					if (to_iterate_eval->get_value()->type != VALUE_TYPE_COLLECTION)
+						throw ERROR_MUST_HAVE_COLLECTION_TYPE;
+					collection* to_iterate = (collection*)to_iterate_eval->get_value()->ptr;
+					delete to_iterate_eval;
+
+					call_stack.top()->manager->declare_var(for_tok->identifier, new value(VALUE_TYPE_NULL, nullptr));
+					
+					for (size_t i = 0; i < to_iterate->size; i++)
+					{
+						call_stack.top()->manager->set_var_reference(for_tok->identifier, to_iterate->get_reference(i));
+						value_eval* eval = execute_block(for_tok->instructions);
+						if (eval != nullptr) {
+							return eval;
+						}
+						else if (break_mode) {
+							break_mode = false;
+							return nullptr;
+						}
+					}
+					call_stack.top()->manager->remove_var(for_tok->identifier);
 					break;
 				}
 				case TOKEN_UNIARY_OP:

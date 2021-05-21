@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 			return 1;
 		}
 		infile.seekg(0, std::ios::end);
-		int buffer_length = infile.tellg();
+		unsigned int buffer_length = infile.tellg();
 		infile.seekg(0, std::ios::beg);
 		char* buffer = new char[buffer_length + 1];
 		infile.read(buffer, buffer_length);

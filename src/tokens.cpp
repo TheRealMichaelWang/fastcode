@@ -72,6 +72,9 @@ namespace fastcode {
 			case TOKEN_WHILE:
 				delete (conditional_token*)token;
 				break;
+			case TOKEN_FOR:
+				delete (for_token*)token;
+				break;
 			case TOKEN_BREAK:
 				delete token;
 				break;
@@ -223,6 +226,19 @@ namespace fastcode {
 				return condition_success ? this : nullptr;
 			}
 			throw ERROR_UNRECOGNIZED_TOKEN;
+		}
+
+		for_token::for_token(identifier_token* identifier, token* collection, std::list<token*> instructions) : token(TOKEN_FOR){
+			this->collection = collection;
+			this->identifier = identifier;
+			this->instructions = instructions;
+		}
+
+		for_token::~for_token() {
+			destroy_value_tok(this->collection);
+			delete this->identifier;
+			for (auto i = instructions.begin(); i != instructions.end(); ++i)
+				destroy_top_lvl_tok(*i);
 		}
 
 		create_array_token::create_array_token(std::list<token*> values) : token(TOKEN_CREATE_ARRAY) {

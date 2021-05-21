@@ -6,6 +6,15 @@
 
 namespace fastcode {
 	namespace parsing {
+
+		structure_prototype::structure_prototype(const char* identifier, const char* properties[], unsigned int property_count) : token(TOKEN_STRUCT_PROTO) {
+			this->identifier = new identifier_token(identifier);
+			this->property_count = property_count;
+			this->property_order = new unsigned long[this->property_count];
+			for (unsigned int i = 0; i < property_count; i++)
+				this->property_order[i] = insecure_hash(properties[i]);
+		}
+
 		structure_prototype::structure_prototype(identifier_token* identifier, std::list<identifier_token*> identifiers) : token(TOKEN_STRUCT_PROTO) {
 			this->identifier = identifier;
 			this->property_count = identifiers.size();
@@ -35,9 +44,7 @@ namespace fastcode {
 	namespace runtime {
 		structure::structure(parsing::structure_prototype* prototype, garbage_collector* gc) : structure(prototype, gc->new_apartment(new value(VALUE_TYPE_STRUCT, this))) {
 			for (size_t i = 0; i < prototype->property_count; i++)
-			{
 				this->properties[i] = gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
-			}
 		}
 
 		structure::structure(parsing::structure_prototype* prototype, reference_apartment* parent_reference) {
@@ -47,10 +54,6 @@ namespace fastcode {
 		}
 
 		structure::~structure() {
-			for (size_t i = 0; i < prototype->property_count; i++)
-			{
-				//this->properties[i]->remove_reference();
-			}
 			delete[] this->properties;
 		}
 
@@ -106,31 +109,21 @@ namespace fastcode {
 			this->inner_collection = new reference_apartment * [size];
 		}
 
-		collection::~collection() {/*
-			for (size_t i = 0; i < size; i++)
-			{
-				if(!this->inner_collection[i]->can_delete())
-					this->inner_collection[i]->remove_reference();
-			}*/
+		collection::~collection() {
 			delete this->inner_collection;
 		}
 
 		collection* collection::clone(reference_apartment* new_parent_apptr) {
 			collection* copy = new collection(this->size, new_parent_apptr);
 			for (unsigned long i = 0; i < size; i++)
-			{
 				copy->inner_collection[i] = this->inner_collection[i];
-				//this->inner_collection[i]->add_reference();
-			}
 			return copy;
 		}
 
 		int collection::hash() {
 			int hash = 66; //magic number for collection hahses
 			for (size_t i = 0; i < this->size; i++)
-			{
 				hash = combine_hash(hash, this->inner_collection[i]->value->hash());
-			}
 			return hash;
 		}
 
@@ -167,6 +160,8 @@ namespace fastcode {
 		case VALUE_TYPE_STRUCT:
 			delete (runtime::structure*)this->ptr;
 			break;
+		case VALUE_TYPE_HANDLE:
+			break;
 		default:
 			throw ERROR_INVALID_VALUE_TYPE;
 		}
@@ -183,6 +178,8 @@ namespace fastcode {
 			return ((runtime::collection*)this->ptr)->hash();
 		case VALUE_TYPE_STRUCT:
 			return ((runtime::structure*)this->ptr)->hash();
+		case VALUE_TYPE_HANDLE:
+			return int(this->ptr);
 		default:
 			throw ERROR_INVALID_VALUE_TYPE;
 		}

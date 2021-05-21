@@ -6,8 +6,9 @@
 #define VALUE_TYPE_NULL 0
 #define VALUE_TYPE_CHAR 1
 #define VALUE_TYPE_NUMERICAL 2
-#define VALUE_TYPE_COLLECTION 3
-#define VALUE_TYPE_STRUCT 4
+#define VALUE_TYPE_HANDLE 3
+#define VALUE_TYPE_COLLECTION 4
+#define VALUE_TYPE_STRUCT 5
 
 namespace fastcode {
 	class value {

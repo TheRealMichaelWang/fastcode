@@ -13,6 +13,8 @@ namespace fastcode {
 		runtime::reference_apartment* allocate_array(std::list<value*> arguments, runtime::garbage_collector* gc);
 		runtime::reference_apartment* get_length(std::list<value*> arguments, runtime::garbage_collector* gc);
 		runtime::reference_apartment* count_instances(std::list<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_range(std::list<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_handle(std::list<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

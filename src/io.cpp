@@ -111,6 +111,9 @@ namespace fastcode {
 			//std::cout << '<' << ((structure*)val->ptr)->get_identifier()->get_identifier() << '>';
 			xprint((runtime::structure*)val->ptr, 0);
 			break;
+		case VALUE_TYPE_HANDLE:
+			std::cout << "<handle " << (long)val->ptr << ">";
+			break;
 		default:
 			throw ERROR_INVALID_VALUE_TYPE;
 		}

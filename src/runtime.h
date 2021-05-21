@@ -127,7 +127,18 @@ namespace fastcode {
 
 			void include(const char* file_path);
 
-			void import_func(const char* identifier, builtins::built_in_function function);
+			inline void import_func(const char* identifier, builtins::built_in_function function) {
+				unsigned long id_hash = insecure_hash(identifier);
+				if (built_in_functions.count(id_hash))
+					throw ERROR_FUNCTION_PROTO_ALREADY_DEFINED;
+				built_in_functions[id_hash] = function;
+			}
+
+			inline void import_struct(parsing::structure_prototype* struct_proto) {
+				if (struct_definitions.count(struct_proto->identifier->id_hash))
+					throw ERROR_STRUCT_PROTO_ALREADY_DEFINED;
+				struct_definitions[struct_proto->identifier->id_hash] = struct_proto;
+			}
 
 			inline void new_constant(const char* identifier, value* val) {
 				this->lexer_state.constants[insecure_hash(identifier)] = new parsing::value_token(val);

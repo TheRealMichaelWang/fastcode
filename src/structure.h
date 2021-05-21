@@ -20,6 +20,7 @@ namespace fastcode {
 
 			unsigned int property_count;
 
+			structure_prototype(const char* identifier, const char* properties[], unsigned int property_couunt);
 			structure_prototype(identifier_token* identifier, std::list<identifier_token*> properties);
 			~structure_prototype();
 

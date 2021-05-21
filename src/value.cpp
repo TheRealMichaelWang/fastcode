@@ -1,7 +1,7 @@
 #include "errors.h"
 #include "value.h"
 
-#define MAX_VALUE_TYPE 4
+#define MAX_VALUE_TYPE 5
 
 namespace fastcode {
 	value::value(char type, void* ptr) {
@@ -23,6 +23,9 @@ namespace fastcode {
 			break;
 		case VALUE_TYPE_NUMERICAL:
 			clone->ptr = new long double(*(long double*)this->ptr);
+			break;
+		case VALUE_TYPE_HANDLE:
+			clone->ptr = this->ptr;
 			break;
 		default:
 			throw ERROR_INVALID_VALUE_TYPE;

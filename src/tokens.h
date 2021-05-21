@@ -35,6 +35,7 @@
 #define TOKEN_ELIF 66
 #define TOKEN_ELSE 67
 #define TOKEN_WHILE 68
+#define TOKEN_FOR 69
 
 //hardcoded create tokens
 #define TOKEN_CREATE_ARRAY 70 
@@ -68,6 +69,16 @@ namespace fastcode {
 
 		struct identifier_token : token {
 		public:
+			unsigned long id_hash;
+			
+			identifier_token(const char* identifier);
+			identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
+			~identifier_token();
+
+			inline void no_delete() {
+				this->delete_id = false;
+			}
+
 			inline const char* get_identifier() {
 				return (const char*)this->id_str_ptr;
 			}
@@ -79,16 +90,6 @@ namespace fastcode {
 				this->id_str_ptr = id_str;
 				this->id_hash = insecure_hash(id_str);
 			}
-
-			unsigned long id_hash;
-			identifier_token(const char* identifier);
-			identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
-			~identifier_token();
-
-			inline void no_delete() {
-				this->delete_id = false;
-			}
-
 		private:
 			char* id_str_ptr;
 			bool delete_id;
@@ -96,6 +97,7 @@ namespace fastcode {
 
 		struct variable_access_token : token {
 			std::list<token*> modifiers;
+			
 			variable_access_token(std::list<token*> modifiers);
 			~variable_access_token();
 
@@ -106,12 +108,14 @@ namespace fastcode {
 
 		struct index_token : token {
 			token* value;
+			
 			index_token(token* value);
 			~index_token();
 		};
 
 		struct get_reference_token :token {
 			variable_access_token* var_access;
+			
 			get_reference_token(variable_access_token* var_access);
 			~get_reference_token();
 		};
@@ -120,6 +124,7 @@ namespace fastcode {
 			bool create_static;
 			variable_access_token* destination;
 			token* value;
+			
 			set_token(variable_access_token* destination, token* value, bool create_static);
 			~set_token();
 		};
@@ -127,12 +132,14 @@ namespace fastcode {
 		struct function_call_token :token {
 			identifier_token* identifier;
 			std::list<token*> arguments;
+			
 			function_call_token(identifier_token* identifier, std::list<token*> arguments);
 			~function_call_token();
 		};
 
 		struct return_token :token {
 			token* value;
+			
 			return_token(token* value);
 			~return_token();
 		};
@@ -140,20 +147,33 @@ namespace fastcode {
 		struct conditional_token :token {
 			token* condition;
 			std::list<token*> instructions;
+			conditional_token* next;
+
 			conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next);
 			~conditional_token();
-			conditional_token* next;
+			
 			conditional_token* get_next_conditional(bool condition_val);
+		};
+
+		struct for_token : token {
+			token* collection;
+			identifier_token* identifier;
+			std::list<token*> instructions;
+
+			for_token(identifier_token* identifier, token* collection, std::list<token*> instructions);
+			~for_token();
 		};
 
 		struct create_array_token :token {
 			std::list<token*> values;
+
 			create_array_token(std::list<token*> values);
 			~create_array_token();
 		};
 
 		struct create_struct_token :token {
 			identifier_token* identifier;
+
 			create_struct_token(identifier_token* identifier);
 			~create_struct_token();
 		};
@@ -162,13 +182,17 @@ namespace fastcode {
 			identifier_token* identifier;
 			std::list<identifier_token*> argument_identifiers;
 			std::list<token*> tokens;
+
 			function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens);
 			~function_prototype();
+
+			inline bool is_params() {
+				return argument_identifiers.size() == 1 && argument_identifiers.front()->id_hash == 470537897;
+			}
 		};
 
 		struct include_token :token {
 		public:
-
 			include_token(char* file_path);
 			~include_token();
 

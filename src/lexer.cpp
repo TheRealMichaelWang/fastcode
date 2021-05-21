@@ -31,7 +31,9 @@
 #define TOKEN_GROUP 16 + MAX_TOKEN_LIMIT
 #define TOKEN_END_GROUP 17 + MAX_TOKEN_LIMIT
 
-#define END 18 + MAX_TOKEN_LIMIT
+#define TOKEN_IN_KW 18 + MAX_TOKEN_LIMIT
+
+#define END 19 + MAX_TOKEN_LIMIT
 
 namespace fastcode {
 	namespace parsing {
@@ -143,6 +145,10 @@ namespace fastcode {
 					return last_tok = new token(TOKEN_GROUP);
 				case 303295209:
 					return last_tok = new token(TOKEN_END_GROUP);
+				case 193504908:
+					return last_tok = new token(TOKEN_FOR);
+				case 5863644:
+					return last_tok = new token(TOKEN_IN_KW);
 				case 193499145:
 					while (last_char != '\n')
 						read_char();
@@ -442,6 +448,17 @@ namespace fastcode {
 				read_token();
 				token* condition = tokenize_expression();
 				return new conditional_token(TOKEN_WHILE, condition, tokenize_body(), nullptr);
+			}
+			case TOKEN_FOR: {
+				delete last_tok;
+				match_tok(read_token(), TOKEN_IDENTIFIER);
+				identifier_token* id = (identifier_token*)last_tok;
+				lexer_state->declare_id(id, GROUP_TYPE_VAR);
+				match_tok(read_token(), TOKEN_IN_KW);
+				delete last_tok;
+				read_token();
+				token* collection = tokenize_value();
+				return new for_token(id, collection, tokenize_body());
 			}
 			case TOKEN_STRUCT_KW: {
 				delete last_tok;

@@ -144,7 +144,7 @@ namespace fastcode {
 			~lexer();
 
 			inline bool eos() {
-				return last_tok == nullptr ? last_char == 0 : last_tok->type == 18 + MAX_TOKEN_LIMIT;
+				return last_tok == nullptr ? last_char == 0 : last_tok->type == 19 + MAX_TOKEN_LIMIT;
 			}
 
 			inline unsigned int get_pos() {
