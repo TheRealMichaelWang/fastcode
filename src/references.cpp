@@ -53,7 +53,7 @@ namespace fastcode {
 		}
 
 		void reference_apartment::remove_reference(reference_apartment* parent) {
-			if (this->references == 0)
+			if (this->references - parent->references < 0)
 				throw ERROR_CANNOT_DEREFERENCE;
 			this->references -= parent->references;
 			unsigned int children_count = 0;

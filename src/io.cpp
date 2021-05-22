@@ -185,5 +185,16 @@ namespace fastcode {
 
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(1)));
 		}
+
+		runtime::reference_apartment* system_call(std::list<value*> args, runtime::garbage_collector* gc) {
+			match_arg_len(args, 1);
+			match_arg_type(args.front(), VALUE_TYPE_COLLECTION);
+
+			char* command = to_c_str(args.front());
+			system(command);
+			delete[] command;
+
+			return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
+		}
 	}
 }

@@ -48,7 +48,8 @@ namespace fastcode {
 			if (parent == nullptr)
 				hash_buckets[id_hash % VARIABLE_HASH_BUCKET_SIZE] = new variable_bucket(id_hash, reference);
 			else
-				parent = new variable_bucket(id_hash, reference);
+				parent->next_bucket = new variable_bucket(id_hash, reference);
+			size++;
 			return reference;
 		}
 
@@ -71,6 +72,7 @@ namespace fastcode {
 				parent->next_bucket = bucket->next_bucket;
 			bucket->apartment->remove_reference();
 			delete bucket;
+			size--;
 		}
 
 		bool variable_manager::has_var(unsigned long id_hash)

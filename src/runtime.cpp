@@ -44,6 +44,7 @@ namespace fastcode {
 			import_func("len", builtins::get_length);
 			import_func("range", builtins::get_range);
 			import_func("handle", builtins::get_handle);
+			import_func("system", builtins::system_call);
 			import_func("read@file", builtins::file_read_text);
 			import_func("write@file", builtins::file_write_text);
 			import_func("count@linq", builtins::count_instances);
@@ -332,7 +333,7 @@ namespace fastcode {
 								call_stack.top()->manager->declare_var(set_tok->destination->get_identifier(), eval->get_value());
 							}
 						}
-					}
+					}          
 				}
 				else {
 					if (eval->type == VALUE_EVAL_TYPE_REF) {
