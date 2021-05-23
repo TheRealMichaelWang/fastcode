@@ -19,7 +19,7 @@
 
 //operator tokens 5 - 59
 #define TOKEN_BINARY_OP 5
-#define TOKEN_UNIARY_OP 6
+#define TOKEN_unary_OP 6
 
 #define STD_OP_TOK_OFFSET 7 //offset for individual operator tokens/ids
 
@@ -63,6 +63,8 @@ namespace fastcode {
 			inline value* get_value() {
 				return this->inner_value_ptr->clone();
 			}
+
+			void print();
 		private:
 			value* inner_value_ptr;
 		};
@@ -90,6 +92,8 @@ namespace fastcode {
 				this->id_str_ptr = id_str;
 				this->id_hash = insecure_hash(id_str);
 			}
+
+			void print();
 		private:
 			char* id_str_ptr;
 			bool delete_id;
@@ -104,6 +108,8 @@ namespace fastcode {
 			inline identifier_token* get_identifier() {
 				return (identifier_token*)modifiers.front();
 			}
+
+			void print();
 		};
 
 		struct index_token : token {
@@ -111,6 +117,8 @@ namespace fastcode {
 			
 			index_token(token* value);
 			~index_token();
+
+			void print();
 		};
 
 		struct get_reference_token :token {
@@ -118,6 +126,8 @@ namespace fastcode {
 			
 			get_reference_token(variable_access_token* var_access);
 			~get_reference_token();
+
+			void print();
 		};
 
 		struct set_token :token {
@@ -127,6 +137,8 @@ namespace fastcode {
 			
 			set_token(variable_access_token* destination, token* value, bool create_static);
 			~set_token();
+
+			void print();
 		};
 
 		struct function_call_token :token {
@@ -135,6 +147,8 @@ namespace fastcode {
 			
 			function_call_token(identifier_token* identifier, std::list<token*> arguments);
 			~function_call_token();
+
+			void print();
 		};
 
 		struct return_token :token {
@@ -142,6 +156,8 @@ namespace fastcode {
 			
 			return_token(token* value);
 			~return_token();
+
+			void print();
 		};
 
 		struct conditional_token :token {
@@ -153,6 +169,7 @@ namespace fastcode {
 			~conditional_token();
 			
 			conditional_token* get_next_conditional(bool condition_val);
+			void print(int indent = 0);
 		};
 
 		struct for_token : token {
@@ -162,6 +179,8 @@ namespace fastcode {
 
 			for_token(identifier_token* identifier, token* collection, std::list<token*> instructions);
 			~for_token();
+
+			void print(int indent = 0);
 		};
 
 		struct create_array_token :token {
@@ -169,6 +188,8 @@ namespace fastcode {
 
 			create_array_token(std::list<token*> values);
 			~create_array_token();
+
+			void print();
 		};
 
 		struct create_struct_token :token {
@@ -176,6 +197,8 @@ namespace fastcode {
 
 			create_struct_token(identifier_token* identifier);
 			~create_struct_token();
+
+			void print();
 		};
 
 		struct function_prototype :token {
@@ -189,6 +212,8 @@ namespace fastcode {
 			inline bool is_params() {
 				return argument_identifiers.size() == 1 && argument_identifiers.front()->id_hash == 470537897;
 			}
+
+			void print();
 		};
 
 		struct include_token :token {
@@ -199,20 +224,21 @@ namespace fastcode {
 			inline const char* get_file_path() {
 				return this->file_path;
 			}
+
+			void print();
 		private:
 			char* file_path;
 		};
 
 		inline bool is_top_level_tok(token* token) {
-			return (token->type > 60 && token->type < 70) || token->type == TOKEN_UNIARY_OP || token->type == TOKEN_INCLUDE;
+			return (token->type > 60 && token->type < 70) || token->type == TOKEN_unary_OP || token->type == TOKEN_INCLUDE;
 		}
 
 		void destroy_top_lvl_tok(token* token);
-
 		void destroy_value_tok(token* val_tok);
 
 		inline bool is_value_tok(token* value) {
-			return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_UNIARY_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
+			return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_unary_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
 		}
 	}
 }

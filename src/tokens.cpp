@@ -28,8 +28,8 @@ namespace fastcode {
 			case TOKEN_BINARY_OP:
 				delete (binary_operator_token*)val_tok;
 				break;
-			case TOKEN_UNIARY_OP:
-				delete (uniary_operator_token*)val_tok;
+			case TOKEN_unary_OP:
+				delete (unary_operator_token*)val_tok;
 				break;
 			case TOKEN_GET_REFERENCE:
 				delete (get_reference_token*)val_tok;
@@ -63,8 +63,8 @@ namespace fastcode {
 			case TOKEN_RETURN:
 				delete (return_token*)token;
 				break;
-			case TOKEN_UNIARY_OP:
-				delete (uniary_operator_token*)token;
+			case TOKEN_unary_OP:
+				delete (unary_operator_token*)token;
 				break;
 			case TOKEN_IF:
 			case TOKEN_ELIF:

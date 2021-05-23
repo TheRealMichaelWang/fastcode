@@ -141,11 +141,6 @@ namespace fastcode {
 			};
 
 			lexer(const char* source, unsigned long source_length, lexer_state* lexer_state);
-			~lexer();
-
-			inline bool eos() {
-				return last_tok == nullptr ? last_char == 0 : last_tok->type == 19 + MAX_TOKEN_LIMIT;
-			}
 
 			inline unsigned int get_pos() {
 				return this->position;

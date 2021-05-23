@@ -6,38 +6,27 @@
 
 namespace fastcode {
 	namespace parsing {
-
 		structure_prototype::structure_prototype(const char* identifier, const char* properties[], unsigned int property_count) : token(TOKEN_STRUCT_PROTO) {
 			this->identifier = new identifier_token(identifier);
 			this->property_count = property_count;
-			this->property_order = new unsigned long[this->property_count];
-			for (unsigned int i = 0; i < property_count; i++)
-				this->property_order[i] = insecure_hash(properties[i]);
+			for (unsigned int i = 0; i < property_count; i++) {
+				identifier_token* prop = new identifier_token(identifier);
+				this->property_indicies[prop->id_hash] = i;
+				this->properties.push_back(prop);
+			}
 		}
 
-		structure_prototype::structure_prototype(identifier_token* identifier, std::list<identifier_token*> identifiers) : token(TOKEN_STRUCT_PROTO) {
+		structure_prototype::structure_prototype(identifier_token* identifier, std::list<identifier_token*> properties) : token(TOKEN_STRUCT_PROTO) {
 			this->identifier = identifier;
-			this->property_count = identifiers.size();
-			unsigned int size = property_count;
-			this->property_order = new unsigned long[this->property_count];
-			for (auto i = identifiers.begin(); i != identifiers.end(); ++i) {
-				this->property_order[--size] = (*i)->id_hash;
-				delete* i;
-			}
+			this->property_count = properties.size();
+			unsigned int index = 0;
+			for (auto i = properties.begin(); i != properties.end(); ++i)
+				this->property_indicies[(*i)->id_hash] = index++;
+			this->properties = properties;
 		}
 
 		structure_prototype::~structure_prototype() {
 			delete identifier;
-			delete[] this->property_order;
-		}
-
-		unsigned int structure_prototype::get_index(unsigned long id_hash) {
-			for (unsigned char i = 0; i < property_count; i++)
-			{
-				if (property_order[i] == id_hash)
-					return i;
-			}
-			throw ERROR_PROPERTY_NOT_FOUND;
 		}
 	}
 

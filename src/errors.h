@@ -22,7 +22,7 @@
 
 //operator erros
 #define ERROR_INVALID_BINARY_OPERATOR 41
-#define ERROR_INVALID_UNIARY_OPERATOR 42
+#define ERROR_INVALID_unary_OPERATOR 42
 
 //lexographical errors
 #define ERROR_UNEXPECTED_TOKEN 50
@@ -67,7 +67,7 @@ inline const char* get_err_info(int err) {
 		return "Invalid Accessor Modifiers";
 	case ERROR_INVALID_BINARY_OPERATOR:
 		return "Invalid Binary Operator";
-	case ERROR_INVALID_UNIARY_OPERATOR:
+	case ERROR_INVALID_unary_OPERATOR:
 		return "Invalid Unary Operator";
 	case ERROR_UNEXPECTED_TOKEN:
 		return "Unexpected Token";

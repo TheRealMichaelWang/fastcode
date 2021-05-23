@@ -20,23 +20,23 @@ namespace fastcode {
 			destroy_value_tok(this->right);
 		}
 
-		uniary_operator_token::uniary_operator_token(token* value, unsigned char op) : token(TOKEN_UNIARY_OP) {
-			if (!is_uniary_operator(op))
-				throw ERROR_INVALID_UNIARY_OPERATOR;
+		unary_operator_token::unary_operator_token(token* value, unsigned char op) : token(TOKEN_unary_OP) {
+			if (!is_unary_operator(op))
+				throw ERROR_INVALID_unary_OPERATOR;
 			if (!is_value_tok(value))
 				throw ERROR_UNEXPECTED_TOKEN;
 			this->value = value;
 			this->op = op;
 		}
 
-		uniary_operator_token::~uniary_operator_token() {
+		unary_operator_token::~unary_operator_token() {
 			destroy_value_tok(this->value);
 		}
 	}
 
 	namespace runtime {
 		value* evaluate_binary_op(unsigned char op, value* a, value* b) {
-			if (parsing::is_uniary_operator(op))
+			if (parsing::is_unary_operator(op))
 				throw ERROR_UNEXPECTED_TOKEN;
 			switch (op)
 			{
@@ -109,8 +109,8 @@ namespace fastcode {
 			}
 		}
 
-		value* evaluate_uniary_op(unsigned char op, value* a) {
-			if (!parsing::is_uniary_operator(op))
+		value* evaluate_unary_op(unsigned char op, value* a) {
+			if (!parsing::is_unary_operator(op))
 				throw ERROR_UNEXPECTED_TOKEN;
 			switch (op) {
 			case OP_INVERT:

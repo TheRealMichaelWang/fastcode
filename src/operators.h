@@ -40,13 +40,18 @@ namespace fastcode {
 			unsigned char op;
 			binary_operator_token(token* left, token* right, unsigned char op);
 			~binary_operator_token();
+		
+			void print();
 		};
 
-		struct uniary_operator_token : token {
+		struct unary_operator_token : token {
 			token* value;
 			unsigned char op;
-			uniary_operator_token(token* value, unsigned char op);
-			~uniary_operator_token();
+
+			unary_operator_token(token* value, unsigned char op);
+			~unary_operator_token();
+
+			void print();
 		};
 
 		inline unsigned char get_operator_precedence(char op_type) {
@@ -61,14 +66,14 @@ namespace fastcode {
 			return (op_type - STD_OP_TOK_OFFSET) < 50;
 		}
 
-		inline bool is_uniary_operator(unsigned char op_type) {
+		inline bool is_unary_operator(unsigned char op_type) {
 			return (op_type - STD_OP_TOK_OFFSET) >= 50;
 		}
 	}
 
 	namespace runtime {
 		value* evaluate_binary_op(unsigned char op, value* a, value* b);
-		value* evaluate_uniary_op(unsigned char op, value* a);
+		value* evaluate_unary_op(unsigned char op, value* a);
 	}
 }
 #endif // !OPERATORS_H

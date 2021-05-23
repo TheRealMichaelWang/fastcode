@@ -73,10 +73,11 @@ namespace fastcode {
 				delete lexer;
 			}
 			catch (int syntax_err) {
-				delete lexer;
 				//handle syntax error
 				last_error = syntax_err;
 				handle_syntax_err(syntax_err, lexer == nullptr ? 0 : lexer->get_pos(), source);
+
+				delete lexer;
 				return -1;
 			}
 
@@ -386,10 +387,10 @@ namespace fastcode {
 				delete b_eval;
 				return result;
 			}
-			case TOKEN_UNIARY_OP: {
-				parsing::uniary_operator_token* uniop = (parsing::uniary_operator_token*)eval_tok;
+			case TOKEN_unary_OP: {
+				parsing::unary_operator_token* uniop = (parsing::unary_operator_token*)eval_tok;
 				value_eval* a_eval = evaluate(uniop->value, true);
-				value_eval* result = new value_eval(evaluate_uniary_op(uniop->op, a_eval->get_value()));
+				value_eval* result = new value_eval(evaluate_unary_op(uniop->op, a_eval->get_value()));
 				delete a_eval;
 				return result;
 			}
@@ -487,6 +488,7 @@ namespace fastcode {
 				case TOKEN_WHILE: {
 					parsing::conditional_token* current = (parsing::conditional_token*)*it;
 					while (current != nullptr) {
+						last_tok = current;
 						if (current->condition == nullptr) {
 							value_eval* eval = execute_block(current->instructions);
 							if (eval != nullptr) {
@@ -528,7 +530,8 @@ namespace fastcode {
 					collection* to_iterate = (collection*)to_iterate_eval->get_value()->ptr;
 					delete to_iterate_eval;
 
-					call_stack.top()->manager->declare_var(for_tok->identifier, new value(VALUE_TYPE_NULL, nullptr));
+					if(!call_stack.top()->manager->has_var(for_tok->identifier))
+						call_stack.top()->manager->declare_var(for_tok->identifier, new value(VALUE_TYPE_NULL, nullptr));
 					
 					for (size_t i = 0; i < to_iterate->size; i++)
 					{
@@ -545,7 +548,7 @@ namespace fastcode {
 					call_stack.top()->manager->remove_var(for_tok->identifier);
 					break;
 				}
-				case TOKEN_UNIARY_OP:
+				case TOKEN_unary_OP:
 				case TOKEN_FUNCTION_CALL:
 				case TOKEN_SET:
 					delete evaluate(*it, false);

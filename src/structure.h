@@ -4,6 +4,7 @@
 #define STRUCT_H
 
 #include <list>
+#include <map>
 #include "tokens.h"
 #include "references.h"
 #include "garbage.h"
@@ -12,25 +13,35 @@ namespace fastcode {
 	namespace parsing {
 		class structure_prototype : public token {
 		private:
-			unsigned long* property_order;
-
+			std::map<unsigned long, unsigned int> property_indicies;
+			std::list<identifier_token*> properties;
 		public:
 
 			identifier_token* identifier;
 
 			unsigned int property_count;
 
-			structure_prototype(const char* identifier, const char* properties[], unsigned int property_couunt);
+			structure_prototype(const char* identifier, const char* properties[], unsigned int property_count);
 			structure_prototype(identifier_token* identifier, std::list<identifier_token*> properties);
 			~structure_prototype();
 
 			//gets the index of a property
-			unsigned int get_index(unsigned long id_hash);
+			inline unsigned int get_index(unsigned long id_hash) {
+				if (!this->property_indicies.count(id_hash))
+					throw ERROR_PROPERTY_NOT_FOUND;
+				return this->property_indicies[id_hash];
+			}
 
 			//gets the index of a property
 			inline unsigned int get_index(identifier_token* identifier) {
 				return get_index(identifier->id_hash);
 			}
+
+			inline std::list<identifier_token*> get_properties() {
+				return this->properties;
+			}
+
+			void print();
 		};
 	}
 

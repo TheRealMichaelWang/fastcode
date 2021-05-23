@@ -60,11 +60,15 @@ namespace fastcode {
 			else
 				throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 
-			unsigned long size = (stop - start) / step;
+			unsigned long size = abs(stop - start) / abs(step);
 
 			runtime::collection* range = new runtime::collection(size, gc);
-			for (long double i = start; i < stop; i += step)
-				range->set_value(i, new value(VALUE_TYPE_NUMERICAL, new long double(i)));
+
+			unsigned int j = 0;
+
+			for (long double i = start; step > 0 ? i < stop : i > stop; i += step)
+				range->set_value(j++, new value(VALUE_TYPE_NUMERICAL, new long double(i)));
+			
 			return range->get_parent_ref();
 		}
 
