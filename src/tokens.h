@@ -19,7 +19,7 @@
 
 //operator tokens 5 - 59
 #define TOKEN_BINARY_OP 5
-#define TOKEN_unary_OP 6
+#define TOKEN_UNARY_OP 6
 
 #define STD_OP_TOK_OFFSET 7 //offset for individual operator tokens/ids
 
@@ -205,13 +205,10 @@ namespace fastcode {
 			identifier_token* identifier;
 			std::list<identifier_token*> argument_identifiers;
 			std::list<token*> tokens;
+			bool params_mode;
 
-			function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens);
+			function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens, bool params_mode);
 			~function_prototype();
-
-			inline bool is_params() {
-				return argument_identifiers.size() == 1 && argument_identifiers.front()->id_hash == 470537897;
-			}
 
 			void print();
 		};
@@ -231,14 +228,14 @@ namespace fastcode {
 		};
 
 		inline bool is_top_level_tok(token* token) {
-			return (token->type > 60 && token->type < 70) || token->type == TOKEN_unary_OP || token->type == TOKEN_INCLUDE;
+			return (token->type > 60 && token->type < 70) || token->type == TOKEN_UNARY_OP || token->type == TOKEN_INCLUDE;
 		}
 
 		void destroy_top_lvl_tok(token* token);
 		void destroy_value_tok(token* val_tok);
 
 		inline bool is_value_tok(token* value) {
-			return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_unary_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
+			return value->type == TOKEN_VALUE || value->type == TOKEN_VAR_ACCESS || value->type == TOKEN_FUNCTION_CALL || value->type == TOKEN_UNARY_OP || value->type == TOKEN_BINARY_OP || value->type == TOKEN_GET_REFERENCE || value->type == TOKEN_CREATE_ARRAY || value->type == TOKEN_CREATE_STRUCT || value->type == TOKEN_SET || value->type == TOKEN_RETURN;
 		}
 	}
 }

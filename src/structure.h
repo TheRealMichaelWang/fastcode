@@ -60,6 +60,9 @@ namespace fastcode {
 			//sets the reference of a property
 			void set_reference(unsigned long id_hash, reference_apartment* reference);
 
+			//sets a reference at a property's index
+			void set_reference_at(unsigned int index, reference_apartment* reference);
+
 			structure* clone(reference_apartment* new_parent_appt);
 
 			int hash();
@@ -76,6 +79,10 @@ namespace fastcode {
 			//sets the value of a property
 			inline void set_value(unsigned long id_hash, value* value) {
 				this->properties[this->prototype->get_index(id_hash)]->set_value(value);
+			}
+
+			inline void set_value_at(unsigned int index, value* value) {
+				this->properties[index]->set_value(value);
 			}
 
 			//sets the value of a property
@@ -113,6 +120,10 @@ namespace fastcode {
 
 			inline reference_apartment* get_parent_ref() {
 				return this->parent_reference;
+			}
+
+			inline parsing::structure_prototype* get_proto() {
+				return this->prototype;
 			}
 		};
 	}

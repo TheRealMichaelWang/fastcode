@@ -16,7 +16,7 @@ namespace fastcode {
 			std::cout << '\t';
 	}
 
-	void print_value(value* val);
+	void print_value(value* val, bool primitive_mode);
 
 	namespace parsing {
 		void print_top_lvl_tok(token* token, int indent = 0) {
@@ -35,20 +35,26 @@ namespace fastcode {
 			case TOKEN_RETURN:
 				((return_token*)token)->print();
 				break;
-			case TOKEN_unary_OP:
+			case TOKEN_UNARY_OP:
 				((unary_operator_token*)token)->print();
 				break;
 			case TOKEN_IF:
 			case TOKEN_ELIF:
 			case TOKEN_ELSE:
 			case TOKEN_WHILE:
-				((conditional_token*)token)->print();
+				((conditional_token*)token)->print(indent);
 				break;
 			case TOKEN_FOR:
-				((for_token*)token)->print();
+				((for_token*)token)->print(indent);
 				break;
 			case TOKEN_BREAK:
 				std::cout << "break";
+				break;
+			case TOKEN_STRUCT_PROTO:
+				((structure_prototype*)token)->print();
+				break;
+			case TOKEN_FUNC_PROTO:
+				((function_prototype*)token)->print();
 				break;
 			default:
 				throw ERROR_UNEXPECTED_TOKEN;
@@ -70,7 +76,7 @@ namespace fastcode {
 			case TOKEN_BINARY_OP:
 				((binary_operator_token*)token)->print();
 				break;
-			case TOKEN_unary_OP:
+			case TOKEN_UNARY_OP:
 				((unary_operator_token*)token)->print();
 				break;
 			case TOKEN_GET_REFERENCE:
@@ -101,7 +107,7 @@ namespace fastcode {
 		}
 
 		void value_token::print() {
-			print_value(this->inner_value_ptr);
+			print_value(this->inner_value_ptr, false);
 		}
 
 		void identifier_token::print() {
@@ -197,6 +203,7 @@ namespace fastcode {
 					std::cout << ", ";
 				print_value_tok(*i);
 			}
+			std::cout << ']';
 		}
 
 		void create_struct_token::print() {
@@ -214,7 +221,7 @@ namespace fastcode {
 				(*i)->print();
 			}
 			std::cout << ')';
-			print_token_body(this->tokens, 1);
+			print_token_body(this->tokens, 0);
 		}
 
 		void structure_prototype::print() {
@@ -337,29 +344,24 @@ namespace fastcode {
 		}
 	}
 
-	inline void print_indent(unsigned int indent) {
-		for (size_t i = 0; i < indent; i++)
-			std::cout << '\t';
-	}
-
 	void xprint(runtime::structure* structure, unsigned int indent) {
-		print_indent(indent);
+		//print_indent(indent);
 		std::cout << '<' << structure->get_identifier()->get_identifier() << '>';
 		runtime::reference_apartment** children = structure->get_children();
+		std::list<parsing::identifier_token*> props = structure->get_proto()->get_properties();
+		auto it = props.begin();
 		for (size_t i = 0; i < structure->get_size(); i++)
 		{
 			std::cout << std::endl;
-			if (children[i]->value->type != VALUE_TYPE_STRUCT) {
-				print_indent(indent + 1);
-				print_value(children[i]->value);
-			}
-			else {
-				xprint((runtime::structure*)children[i]->value->ptr, indent + 1);
-			}
+			print_indent(indent + 1);
+			(*it)->print();
+			std::cout << ": ";
+			++it;
+			print_value(children[i]->value, false);
 		}
 	}
 
-	void print_array(runtime::collection* collection) {
+	void print_array(runtime::collection* collection, bool primitive_mode) {
 		bool is_str = true;
 		for (size_t i = 0; i < collection->size; i++)
 		{
@@ -369,10 +371,14 @@ namespace fastcode {
 			}
 		}
 		if (is_str) {
+			if (primitive_mode)
+				std::cout << '\"';
 			for (size_t i = 0; i < collection->size; i++)
 			{
 				std::cout << *collection->get_value(i)->get_char();
 			}
+			if (primitive_mode)
+				std::cout << '\"';
 		}
 		else {
 			if (collection->size > 25) {
@@ -382,7 +388,7 @@ namespace fastcode {
 			std::cout << '[';
 			for (size_t i = 0; i < collection->size; i++)
 			{
-				print_value(collection->get_value(i));
+				print_value(collection->get_value(i), false);
 				if (i != collection->size - 1)
 					std::cout << ", ";
 			}
@@ -390,24 +396,29 @@ namespace fastcode {
 		}
 	}
 
-	void print_value(value* val) {
+	void print_value(value* val, bool primitive_mode) {
 		switch (val->type)
 		{
 		case VALUE_TYPE_NULL:
 			std::cout << "null";
 			break;
 		case VALUE_TYPE_CHAR:
-			std::cout << *val->get_char();
+			if (primitive_mode)
+				std::cout << *val->get_char();
+			else
+				std::cout << '\'' << *val->get_char() << '\'';
 			break;
 		case VALUE_TYPE_NUMERICAL:
 			std::cout << *val->get_numerical();
 			break;
 		case VALUE_TYPE_COLLECTION:
-			print_array((runtime::collection*)val->ptr);
+			print_array((runtime::collection*)val->ptr, primitive_mode);
 			break;
 		case VALUE_TYPE_STRUCT:
-			//std::cout << '<' << ((structure*)val->ptr)->get_identifier()->get_identifier() << '>';
-			xprint((runtime::structure*)val->ptr, 0);
+			if(primitive_mode)
+				xprint((runtime::structure*)val->ptr, 0);
+			else
+				std::cout << '<' << ((runtime::structure*)val->ptr)->get_identifier()->get_identifier() << '>';
 			break;
 		case VALUE_TYPE_HANDLE:
 			std::cout << "<handle " << (long)val->ptr << ">";
@@ -418,31 +429,31 @@ namespace fastcode {
 	}
 
 	namespace builtins {
-		runtime::reference_apartment* print(std::list<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* print(std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			for (auto it = arguments.begin(); it != arguments.end(); ++it) {
-				print_value(*it);
+				print_value(*it, true);
 			}
 			return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 		}
 
-		runtime::reference_apartment* print_line(std::list<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* print_line(std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			runtime::reference_apartment* appt = print(arguments, gc);
 			std::cout << std::endl;
 			return appt;
 		}
 
-		runtime::reference_apartment* get_input(std::list<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_input(std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			char* input = new char[250];
 			std::cin.getline(input, 250);
 			runtime::collection* str = from_c_str(input, gc);
 			return str->get_parent_ref();
 		}
 
-		runtime::reference_apartment* file_read_text(std::list<value*> args, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* file_read_text(std::vector<value*> args, runtime::garbage_collector* gc) {
 			match_arg_len(args, 1);
-			match_arg_type(args.front(), VALUE_TYPE_COLLECTION);
+			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
 
-			char* file_path = to_c_str(args.front());
+			char* file_path = to_c_str(args[0]);
 
 			std::ifstream infile(file_path, std::ifstream::binary);
 
@@ -463,12 +474,12 @@ namespace fastcode {
 			return strcol->get_parent_ref();
 		}
 
-		runtime::reference_apartment* file_write_text(std::list<value*> args, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* file_write_text(std::vector<value*> args, runtime::garbage_collector* gc) {
 			match_arg_len(args, 2);
-			match_arg_type(args.front(), VALUE_TYPE_COLLECTION);
-			match_arg_type(args.back(), VALUE_TYPE_COLLECTION);
+			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
+			match_arg_type(args[1], VALUE_TYPE_COLLECTION);
 
-			char* file_path = to_c_str(args.front());
+			char* file_path = to_c_str(args[0]);
 
 			std::ofstream infile(file_path, std::ofstream::binary);
 
@@ -476,7 +487,7 @@ namespace fastcode {
 				return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(0)));
 			delete[] file_path;
 
-			char* buffer = to_c_str(args.back());
+			char* buffer = to_c_str(args[1]);
 			infile.write(buffer, strlen(buffer));
 			infile.close();
 			delete[] buffer;
@@ -484,11 +495,11 @@ namespace fastcode {
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(1)));
 		}
 
-		runtime::reference_apartment* system_call(std::list<value*> args, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* system_call(std::vector<value*> args, runtime::garbage_collector* gc) {
 			match_arg_len(args, 1);
-			match_arg_type(args.front(), VALUE_TYPE_COLLECTION);
+			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
 
-			char* command = to_c_str(args.front());
+			char* command = to_c_str(args[0]);
 			system(command);
 			delete[] command;
 

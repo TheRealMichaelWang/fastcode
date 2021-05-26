@@ -24,7 +24,8 @@ namespace fastcode {
 			garbage_collector->sweep(true);
 		}
 
-		interpreter::interpreter() {
+		interpreter::interpreter(bool multi_sweep) {
+			this->multi_sweep = false;
 			static_var_manager = new variable_manager(&garbage_collector);
 			call_stack.push(new call_frame(nullptr, &garbage_collector));
 			new_constant("true", new value(VALUE_TYPE_NUMERICAL, new long double(1)));
@@ -44,6 +45,8 @@ namespace fastcode {
 			import_func("len", builtins::get_length);
 			import_func("range", builtins::get_range);
 			import_func("handle", builtins::get_handle);
+			import_func("setprop", builtins::set_struct_property);
+			import_func("abort", builtins::abort_program);
 			import_func("system", builtins::system_call);
 			import_func("read@file", builtins::file_read_text);
 			import_func("write@file", builtins::file_write_text);
@@ -64,7 +67,7 @@ namespace fastcode {
 			}
 		}
 
-		long double interpreter::run(const char* source, bool interactive_mode) {
+		long double interpreter::run(const char* source, bool interactive_mode, bool handle_err) {
 			parsing::lexer* lexer = nullptr;
 			std::list<parsing::token*> to_execute;
 			try {
@@ -76,7 +79,7 @@ namespace fastcode {
 				//handle syntax error
 				last_error = syntax_err;
 				handle_syntax_err(syntax_err, lexer == nullptr ? 0 : lexer->get_pos(), source);
-
+				
 				delete lexer;
 				return -1;
 			}
@@ -93,37 +96,47 @@ namespace fastcode {
 			}
 			catch (int runtime_error) {
 				last_error = runtime_error;
+				
+				if (handle_err) {
+					std::stack<parsing::function_prototype*> toprint;
+					//cleanup
+					while (call_stack.size() > 1)
+					{
+						toprint.push(call_stack.top()->prototype);
+						delete call_stack.top();
+						call_stack.pop();
+					}
 
-				std::stack<parsing::function_prototype*> toprint;
-				//cleanup
-				while (call_stack.size() > 1)
-				{
-					toprint.push(call_stack.top()->prototype);
-					delete call_stack.top();
-					call_stack.pop();
+					print_call_stack(toprint);
+					handle_runtime_err(runtime_error, err_tok);
+					delete_tok(err_tok);
 				}
-
-				print_call_stack(toprint);
-				handle_runtime_err(runtime_error, last_tok);
-
 				ret_val = nullptr;
 				err = true;
 			}
 
-			garbage_collector.sweep(false);
+			if(multi_sweep)
+				garbage_collector.sweep(false);
 
 			for (auto it = to_execute.begin(); it != to_execute.end(); ++it) {
-				if ((*it)->type != TOKEN_FUNC_PROTO && (*it)->type != TOKEN_STRUCT_PROTO)
-					destroy_top_lvl_tok(*it);
+				if (!(*it == err_tok && err)) {
+					delete_tok(*it);
+				}
 			}
 
-			if (err)
-				return -abs(last_error);
-			if (ret_val == nullptr)
-				return 0;
-			long double exit_code = *ret_val->get_value()->get_numerical();
-			delete ret_val;
-			return exit_code;
+			if (handle_err) {
+				if (err)
+					return -abs(last_error);
+				if (ret_val == nullptr)
+					return 0;
+				long double exit_code = *ret_val->get_value()->get_numerical();
+				delete ret_val;
+				return exit_code;
+			}
+			else if(err) {
+				delete ret_val;
+				throw last_error;
+			}
 		}
 
 		void interpreter::include(const char* file_path) {
@@ -145,10 +158,14 @@ namespace fastcode {
 			infile.read(buffer, buffer_length);
 			infile.close();
 			buffer[buffer_length] = 0;
-			unsigned long ret_code = run(buffer, false);
-			delete[] buffer;
-			if (ret_code != 0) {
-				included_files.erase(path_hash); //stop inport guarding on error
+			try {
+				run(buffer, false, false);
+				delete[] buffer;
+			}
+			catch (int err){
+				delete[] buffer;
+				included_files.erase(path_hash);
+				throw err;
 			}
 		}
 
@@ -387,7 +404,7 @@ namespace fastcode {
 				delete b_eval;
 				return result;
 			}
-			case TOKEN_unary_OP: {
+			case TOKEN_UNARY_OP: {
 				parsing::unary_operator_token* uniop = (parsing::unary_operator_token*)eval_tok;
 				value_eval* a_eval = evaluate(uniop->value, true);
 				value_eval* result = new value_eval(evaluate_unary_op(uniop->op, a_eval->get_value()));
@@ -395,11 +412,12 @@ namespace fastcode {
 				return result;
 			}
 			case TOKEN_FUNCTION_CALL: {
+				parsing::token* old_err_tok = err_tok;
 				parsing::function_call_token* func_call = (parsing::function_call_token*)eval_tok;
 				if (function_definitions.count(func_call->identifier->id_hash)) {
 					parsing::function_prototype* to_execute = function_definitions[func_call->identifier->id_hash];
 					call_frame* new_frame = new call_frame(to_execute, &garbage_collector);
-					if (to_execute->is_params()) {
+					if (to_execute->params_mode) {
 						unsigned int i = 0;
 						collection* param_args = new collection(func_call->arguments.size(), &garbage_collector);
 						for (auto arg_val_it = func_call->arguments.begin(); arg_val_it != func_call->arguments.end(); ++arg_val_it) {
@@ -412,7 +430,7 @@ namespace fastcode {
 							}
 							delete arg_eval;
 						}
-						new_frame->manager->declare_var(470537897, param_args->get_parent_ref());
+						new_frame->manager->declare_var(to_execute->argument_identifiers.front()->id_hash, param_args->get_parent_ref());
 					}
 					else {
 						if (func_call->arguments.size() != to_execute->argument_identifiers.size())
@@ -432,6 +450,7 @@ namespace fastcode {
 					}
 					call_stack.push(new_frame);
 					value_eval* ret_val = execute_block(to_execute->tokens);
+					err_tok = old_err_tok;
 					if (ret_val == nullptr) {
 						if (break_mode)
 							throw ERROR_UNEXPECTED_BREAK;
@@ -446,7 +465,7 @@ namespace fastcode {
 					return ret_val;
 				}
 				else if (built_in_functions.count(func_call->identifier->id_hash)) {
-					std::list<value*> arguments;
+					std::vector<value*> arguments;
 					std::list<bool> can_delete;
 					for (auto it = func_call->arguments.begin(); it != func_call->arguments.end(); ++it) {
 						value_eval* arg_eval = evaluate(*it, false);
@@ -473,7 +492,7 @@ namespace fastcode {
 
 		interpreter::value_eval* interpreter::execute_block(std::list<parsing::token*> tokens) {
 			for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-				last_tok = *it;
+				err_tok = *it;
 				switch ((*it)->type)
 				{
 				case TOKEN_BREAK:
@@ -488,7 +507,7 @@ namespace fastcode {
 				case TOKEN_WHILE: {
 					parsing::conditional_token* current = (parsing::conditional_token*)*it;
 					while (current != nullptr) {
-						last_tok = current;
+						err_tok = current;
 						if (current->condition == nullptr) {
 							value_eval* eval = execute_block(current->instructions);
 							if (eval != nullptr) {
@@ -517,7 +536,8 @@ namespace fastcode {
 							}
 							current = current->get_next_conditional(true);
 						}
-						garbage_collector.sweep(false);
+						if(multi_sweep)
+							garbage_collector.sweep(false);
 						delete cond_eval;
 					}
 					break;
@@ -548,7 +568,7 @@ namespace fastcode {
 					call_stack.top()->manager->remove_var(for_tok->identifier);
 					break;
 				}
-				case TOKEN_unary_OP:
+				case TOKEN_UNARY_OP:
 				case TOKEN_FUNCTION_CALL:
 				case TOKEN_SET:
 					delete evaluate(*it, false);

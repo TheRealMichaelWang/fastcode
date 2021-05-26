@@ -25,6 +25,7 @@
 #define TOKEN_END_GROUP 12 + MAX_TOKEN_LIMIT
 
 #define TOKEN_IN 13 + MAX_TOKEN_LIMIT
+#define TOKEN_PARAMS 14 + MAX_TOKEN_LIMIT
 
 namespace fastcode {
 	namespace parsing {
@@ -78,7 +79,7 @@ namespace fastcode {
 				std::list<char> id_chars;
 				do {
 					id_chars.push_back(last_char);
-				} while (isalpha(read_char()) || last_char == '_' || last_char == '@');
+				} while (isalnum(read_char()) || last_char == '_' || last_char == '@');
 				char* id_buf = new char[id_chars.size() + 1];
 				int index = 0;
 				for (auto it = id_chars.begin(); it != id_chars.end(); ++it)
@@ -105,36 +106,54 @@ namespace fastcode {
 					return last_tok = new token(TOKEN_CREATE_STRUCT);
 				case 498533450: //struct
 				case 4184890820: //record
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_STRUCT_PROTO);
 				case 998468366: //proc
 				case 2090156121: //procedure
 				case 1574308811: //function
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_FUNC_PROTO);
 				case 193491522: //ref
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_GET_REFERENCE);
 				case 281511589: //return
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_RETURN);
 				case 193489624: //and
+					delete[] id_buf;
 					return last_tok = new token(OP_AND);
 				case 5863782: //or
+					delete[] id_buf;
 					return last_tok = new token(OP_OR);
 				case 4135260141:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_STATIC);
 				case 275975372:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_CONST);
 				case 1413452809:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_INCLUDE);
 				case 264645514: //break
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_BREAK);
 				case 271304754:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_GROUP);
 				case 303295209:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_END_GROUP);
 				case 193504908:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_FOR);
 				case 5863644:
+					delete[] id_buf;
 					return last_tok = new token(TOKEN_IN);
+				case 470537897:
+					delete[] id_buf;
+					return last_tok = new token(TOKEN_PARAMS);
 				case 193499145:
+					delete[] id_buf;
 					while (last_char != '\n')
 						read_char();
 					return read_token();
@@ -392,7 +411,7 @@ namespace fastcode {
 			case TOKEN_CREATE_ARRAY:
 			case TOKEN_CREATE_STRUCT:
 			case TOKEN_BINARY_OP:
-			case TOKEN_unary_OP:
+			case TOKEN_UNARY_OP:
 			case TOKEN_VALUE:
 			case OP_SUBTRACT:
 			case OP_INVERT:
@@ -474,28 +493,38 @@ namespace fastcode {
 				match_tok(read_token(), TOKEN_OPEN_PARAM);
 				delete last_tok;
 				std::list<identifier_token*> params;
+				bool params_mode = false;
 				while (last_tok != nullptr && read_token()->type != TOKEN_CLOSE_PARAM)
 				{
 					if (last_tok->type == TOKEN_COMMA) {
 						delete last_tok;
 						read_token();
 					}
+					else if (last_tok->type == TOKEN_PARAMS) {
+						delete last_tok;
+						params_mode = true;
+						read_token();
+					}
 					match_tok(last_tok, TOKEN_IDENTIFIER);
 					params.push_back((identifier_token*)last_tok);
 					lexer_state->declare_id((identifier_token*)last_tok, GROUP_TYPE_VAR);
 				}
+				if (params_mode && params.size() != 1)
+					throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 				if (last_tok == nullptr)
 					throw ERROR_UNEXPECTED_TOKEN;
 				delete last_tok;
 				read_token();
-				return new function_prototype(proto_id, params, tokenize_body());
+				return new function_prototype(proto_id, params, tokenize_body(), params_mode);
 			}
 			}
 			throw ERROR_UNEXPECTED_TOKEN;
 		}
 
 		std::list<token*> lexer::tokenize_body() {
-			if (last_tok->type == TOKEN_OPEN_BRACE) {
+			if (last_tok == nullptr)
+				throw ERROR_UNEXPECTED_END;
+			else if (last_tok->type == TOKEN_OPEN_BRACE) {
 				delete last_tok;
 				read_token();
 				std::list<token*> body = tokenize(false);
@@ -507,6 +536,8 @@ namespace fastcode {
 				delete last_tok;
 				read_token();
 				std::list<token*> body;
+				if (last_tok == nullptr)
+					throw ERROR_UNEXPECTED_END;
 				body.push_back(tokenize_statement(false));
 				return body;
 			}
@@ -525,7 +556,7 @@ namespace fastcode {
 		variable_access_token* lexer::tokenize_var_access(identifier_token* identifier) {
 			std::list<token*> toks;
 			toks.push_back(identifier);
-			while (true)
+			while (last_tok != nullptr)
 			{
 				if (last_tok->type == TOKEN_PERIOD) {
 					delete last_tok;
@@ -547,14 +578,16 @@ namespace fastcode {
 			return new variable_access_token(toks);
 		}
 		token* lexer::tokenize_value() {
-			if (last_tok->type == TOKEN_IDENTIFIER) {
+			if (last_tok == nullptr)
+				throw ERROR_UNEXPECTED_END;
+			else if (last_tok->type == TOKEN_IDENTIFIER) {
 				identifier_token* identifier = (identifier_token*)last_tok;
 				read_token();
 				//tokenize function call
-				if (last_tok->type == TOKEN_OPEN_PARAM) {
+				if (last_tok != nullptr && last_tok->type == TOKEN_OPEN_PARAM) {
 					delete last_tok;
 					std::list<token*> arguments;
-					while (true)
+					while (last_tok != nullptr)
 					{
 						read_token();
 						if (last_tok->type == TOKEN_CLOSE_PARAM)
@@ -579,13 +612,16 @@ namespace fastcode {
 						return new value_token(lexer_state->constants[hash]->get_value());
 					}
 
-					if (last_tok->type == TOKEN_SET)
+					if (last_tok != nullptr && last_tok->type == TOKEN_SET)
 						this->lexer_state->declare_id(identifier, GROUP_TYPE_VAR);
 					else
 						this->lexer_state->reference_id(identifier, GROUP_TYPE_VAR);
 
 					variable_access_token* var_access = tokenize_var_access(identifier);
-					if (last_tok->type == OP_INCRIMENT) {
+
+					if (last_tok == nullptr)
+						return var_access;
+					else if (last_tok->type == OP_INCRIMENT) {
 						delete last_tok;
 						read_token();
 						return new unary_operator_token(var_access, OP_INCRIMENT);
@@ -625,7 +661,7 @@ namespace fastcode {
 				delete last_tok;
 				std::list<token*> values;
 
-				while (true)
+				while (last_tok != nullptr)
 				{
 					read_token();
 

@@ -101,6 +101,24 @@ namespace fastcode {
 				get_ref(access)->set_value(val);
 			}
 
+			inline void delete_tok(parsing::token* tok) {
+				if (tok->type != TOKEN_FUNC_PROTO && tok->type != TOKEN_STRUCT_PROTO)
+					parsing::destroy_top_lvl_tok(tok);
+				else if (tok->type == TOKEN_FUNC_PROTO) {
+					parsing::function_prototype* proto = (parsing::function_prototype*)tok;
+					if (!function_definitions.count(proto->identifier->id_hash))
+						delete proto;
+					else if (function_definitions[proto->identifier->id_hash] != proto)
+						delete proto;
+				}
+				else if (tok->type == TOKEN_STRUCT_PROTO) {
+					parsing::structure_prototype* proto = (parsing::structure_prototype*)tok;
+					if (!struct_definitions.count(proto->identifier->id_hash))
+						delete proto;
+					else if (struct_definitions[proto->identifier->id_hash] != proto)
+						delete proto;
+				}
+			}
 
 			/*
 			* IMPORTANT NOTE:
@@ -114,16 +132,19 @@ namespace fastcode {
 			//executes a block of tokens
 			value_eval* execute_block(std::list<parsing::token*> tokens);
 
+			bool multi_sweep;
+
+			//reference_apartment* get_help(std::vector<value*> args, runtime::garbage_collector* gc);
 		public:
 			int last_error;
 
 			//last token, often is error token
-			parsing::token* last_tok;
+			parsing::token* err_tok;
 
-			interpreter();
+			interpreter(bool multi_sweep);
 			~interpreter();
 
-			long double run(const char* source, bool interactive_mode);
+			long double run(const char* source, bool interactive_mode, bool handle_err = true);
 
 			void include(const char* file_path);
 

@@ -26,6 +26,8 @@ namespace fastcode {
 		}
 
 		structure_prototype::~structure_prototype() {
+			for (auto i = properties.begin(); i != properties.end(); ++i)
+				delete* i;
 			delete identifier;
 		}
 	}
@@ -45,9 +47,15 @@ namespace fastcode {
 		structure::~structure() {
 			delete[] this->properties;
 		}
-
+		
 		void structure::set_reference(unsigned long id_hash, reference_apartment* reference) {
 			unsigned int index = prototype->get_index(id_hash);
+			this->properties[index]->remove_reference(parent_reference);
+			reference->add_reference(parent_reference);
+			this->properties[index] = reference;
+		}
+
+		void structure::set_reference_at(unsigned int index, reference_apartment* reference) {
 			this->properties[index]->remove_reference(parent_reference);
 			reference->add_reference(parent_reference);
 			this->properties[index] = reference;

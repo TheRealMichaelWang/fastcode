@@ -10,12 +10,12 @@ using namespace fastcode;
 
 bool stop = false;
 
-runtime::reference_apartment* quit_repl(std::list<value*> args, runtime::garbage_collector* gc) {
+runtime::reference_apartment* quit_repl(std::vector<value*> args, runtime::garbage_collector* gc) {
 	stop = true;
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
 
-runtime::reference_apartment* get_help(std::list<value*> args, runtime::garbage_collector* gc) {
+runtime::reference_apartment* get_help(std::vector<value*> args, runtime::garbage_collector* gc) {
 	std::cout << "Welcome to FastCode!\n\n\tIf this is your first time using FastCode, we urge you to read the documentation at https://github.com/TheRealMichaelWang/fastcode/wiki, or at least check out the section labled ,A Quick Guide, before reading the entirety of this document."<<std::endl;
 	return gc->new_apartment(new value(VALUE_TYPE_CHAR, new char(' ')));
 }
@@ -49,9 +49,16 @@ char* str_append(char* buf, char* toappend) {
 	return newbuf;
 }
 
+inline bool has_flag(int argc, char** argv, const char* flag) {
+	for (size_t i = 0; i < argc; i++)
+		if (strcmp(argv[i], flag) == 0)
+			return true;
+	return false;
+}
+
 int main(int argc, char** argv) {
 	const char* working_dir = argv[0];
-	runtime::interpreter interpreter;
+	runtime::interpreter interpreter(has_flag(argc, argv, "-gc"));
 
 	interpreter.new_constant("pi@math", new value(VALUE_TYPE_NUMERICAL, new long double(3.1415926)));
 	interpreter.new_constant("e@math", new value(VALUE_TYPE_NUMERICAL, new long double(2.71828182)));

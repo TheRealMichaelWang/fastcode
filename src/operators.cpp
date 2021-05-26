@@ -20,7 +20,7 @@ namespace fastcode {
 			destroy_value_tok(this->right);
 		}
 
-		unary_operator_token::unary_operator_token(token* value, unsigned char op) : token(TOKEN_unary_OP) {
+		unary_operator_token::unary_operator_token(token* value, unsigned char op) : token(TOKEN_UNARY_OP) {
 			if (!is_unary_operator(op))
 				throw ERROR_INVALID_unary_OPERATOR;
 			if (!is_value_tok(value))

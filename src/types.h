@@ -10,9 +10,9 @@
 
 namespace fastcode {
 	namespace builtins {
-		runtime::reference_apartment* get_type(std::list<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* to_string(std::list<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* to_numerical(std::list<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_type(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* to_string(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* to_numerical(std::vector<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

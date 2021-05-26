@@ -28,7 +28,7 @@ namespace fastcode {
 			case TOKEN_BINARY_OP:
 				delete (binary_operator_token*)val_tok;
 				break;
-			case TOKEN_unary_OP:
+			case TOKEN_UNARY_OP:
 				delete (unary_operator_token*)val_tok;
 				break;
 			case TOKEN_GET_REFERENCE:
@@ -63,7 +63,7 @@ namespace fastcode {
 			case TOKEN_RETURN:
 				delete (return_token*)token;
 				break;
-			case TOKEN_unary_OP:
+			case TOKEN_UNARY_OP:
 				delete (unary_operator_token*)token;
 				break;
 			case TOKEN_IF:
@@ -261,10 +261,11 @@ namespace fastcode {
 			delete this->identifier;
 		}
 
-		function_prototype::function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens) : token(TOKEN_FUNC_PROTO) {
+		function_prototype::function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens, bool params_mode) : token(TOKEN_FUNC_PROTO) {
 			this->identifier = identifier;
 			this->argument_identifiers = argument_identifiers;
 			this->tokens = tokens;
+			this->params_mode = params_mode;
 			for (auto i = this->tokens.begin(); i != this->tokens.end(); ++i)
 				if (!is_top_level_tok(*i))
 					throw ERROR_UNEXPECTED_TOKEN;

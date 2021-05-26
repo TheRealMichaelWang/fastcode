@@ -1,7 +1,7 @@
 #ifndef BUILTINS_H
 #define BUILTINS_H
 
-#include <list>
+#include <vector>
 #include "errors.h"
 #include "value.h"
 #include "references.h"
@@ -10,9 +10,9 @@
 
 namespace fastcode {
 	namespace builtins {
-		typedef runtime::reference_apartment* (*built_in_function)(std::list<value*> arguments, runtime::garbage_collector* gc);
+		typedef runtime::reference_apartment* (*built_in_function)(std::vector<value*> arguments, runtime::garbage_collector* gc);
 
-		inline void match_arg_len(std::list<value*> arguments, unsigned int expected_size) {
+		inline void match_arg_len(std::vector<value*> arguments, unsigned int expected_size) {
 			if (arguments.size() != expected_size)
 				throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 		}
@@ -43,6 +43,10 @@ namespace fastcode {
 			}
 			return str_col;
 		}
+
+		runtime::reference_apartment* get_handle(std::vector<value*> arguments, runtime::garbage_collector* gc); 
+		runtime::reference_apartment* set_struct_property(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* abort_program(std::vector<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

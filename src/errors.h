@@ -43,8 +43,10 @@
 #define ERROR_STRUCT_PROTO_NOT_DEFINED 72
 #define ERROR_FUNCTION_PROTO_NOT_DEFINED 73
 
+#define ERROR_ABORTED 74
+
 //import errors
-#define ERROR_CANNOT_INCLUDE_FILE 74
+#define ERROR_CANNOT_INCLUDE_FILE 75
 
 inline const char* get_err_info(int err) {
 	switch (err)
@@ -95,10 +97,12 @@ inline const char* get_err_info(int err) {
 		return "Procedure Prototype Already Defined";
 	case ERROR_FUNCTION_PROTO_NOT_DEFINED:
 		return "Procedure Prototype Not Defined";
+	case ERROR_ABORTED:
+		return "The program has been manually aborted.";
 	case ERROR_CANNOT_INCLUDE_FILE:
 		return "Cannot Include File";
 	default:
-		return "Unkown error?";
+		return "Unkown Error";
 	}
 }
 
