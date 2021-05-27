@@ -37,4 +37,23 @@ proc find(set, key) {
 	return false
 }
 
+proc remove(set, key) {
+	i = hash(key) % hashsize
+	current = set.buckets[i]
+	parent = null
+	while current != null {
+		if current.key == key =>
+			break
+		parent = current
+		current = ref current.next
+	}
+	if current == null =>
+		return false
+	if parent == null =>
+		set.buckets[i] = current.next
+	else =>
+		parent.next = current.next
+	return true
+}
+
 endgroup
