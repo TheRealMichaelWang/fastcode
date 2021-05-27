@@ -1,0 +1,98 @@
+include "strlib.txt"
+include "char.txt"
+
+group csv
+
+group read
+
+proc read_num(lexer) =>
+	return num(read_while@strlib(lexer, 
+				num_chars@char + ['.']
+			))
+
+proc read_quoted(lexer) {
+	if lexer.last_char == '\"' =>
+		read_char@strlib(lexer)
+	else =>
+		abort("Expected a open-quotation")
+	quoted_str = read_till_c@strlib(lexer, ['\"'])
+	read_char@strlib(lexer)
+	return quoted_str
+}
+
+endgroup
+
+group write
+
+proc write_num(builder, num) =>
+	append@strlib(builder, str(num))
+
+proc write_quoted(str){
+	append_c@strlib(builder, '\"')
+	append@strlib(builder, str)
+	append_c@strlib(builder, '\"')
+}
+
+endgroup
+
+proc from_str(str) {
+	lexer = lexer@strlib(str)
+
+	rows = []
+	current_col = []
+
+	while !eos@strlib(lexer) {
+		read_while@strlib(lexer, [' ', '\t'])
+		if is_alpha@char(lexer.last_char) =>
+			current_col = current_col + [read_till@strlib(lexer, [',', '\n'])]
+		elif is_num@char(lexer.last_char) =>
+			current_col = current_col + [read_num@read@csv(lexer)]
+		elif lexer.last_char == '\"' =>
+			current_col = current_col + [read_quoted@read@csv(lexer)]
+		read_till_c@strlib(lexer, [',','\n'])
+		if lexer.last_char == '\r' =>
+			read_char@strlib(lexer)
+		if lexer.last_char == '\n' {
+			rows = rows + [current_col]
+			current_col = []
+		}
+		elif eos@strlib(lexer) =>
+			break
+		elif lexer.last_char != ',' =>
+			abort("Expected a comma. Got ", lexer.last_char, " instead.")
+		read_char@strlib(lexer)
+	}
+	rows = rows + [current_col]
+	return rows
+}
+
+proc to_str(table) {
+	builder = builder@strlib()
+	comma = false
+	newline = false
+	for row in table {
+		if newline =>
+			append_c@strlib(builder, '\n')
+		else =>
+			newline = true
+		for col in row {
+			if comma =>
+				append_c@strlib(builder, ',')
+			else => 
+				comma = true
+			if typeof(col) == coltype =>
+				if count@linq(col, ',') or count@linq(col, ' ') or count@linq(col, '\t') =>
+					write_quoted@write@csv(builder, col)
+				else =>
+					append@strlib(builder, col)
+			elif typeof(col) == numtype =>
+				write_num@write@csv(builder, col)
+			else =>
+				abort("Expected num or string type, got ", typeof(col), " instead.")
+		}
+		comma = false
+	}
+	return build@strlib(builder)
+}
+
+endgroup

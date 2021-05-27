@@ -1,0 +1,111 @@
+include "strlib.txt"
+
+rem generic windows/systems operations
+group windows
+
+struct user {
+	user_name
+	full_name
+	comment
+	user_comment
+	region_code
+	account_active
+	account_expires
+
+	password_last_set
+	password_expires
+	password_changeable
+	password_required
+	user_many_change_password
+
+	workstations_allowed
+	logon_script
+	user_profile
+	home_directory
+	last_logon
+
+	logon_hours_allowed
+
+	local_group_memberships
+	global_group_memberships
+}
+
+proc cmd(params commands) {
+	system("fsutil file createnew _cmd_temp 0 > nul")
+	system(cat_col@str(commands + [" > _cmd_temp 2>&1"]))
+	output = read@file("_cmd_temp")
+	system("del /f _cmd_temp > nul")
+	return output
+}
+
+static users = null
+
+group load_users
+
+proc get_user_info(user_name) {
+	lexer = lexer@strlib(cmd@windows("net user "+user_name))
+	lines = []
+	while !starts_with@str(line = read_tok@strlib(lexer, ['\n']), "The command completed successfully.") {
+		lines = lines + [line]
+	}
+	user = new user@windows
+	prop = 0
+	for line in lines {
+		line_lexer = lexer@strlib(line)
+		line_lexer.excluded_chars = ['\r', '\t']
+		if !is_whitespace@str(read_till@strlib(line_lexer, "  ")) {
+			read_while@strlib(line_lexer, [' '])
+			data = read_end@strlib(line_lexer)
+
+			if is_whitespace@str(data) => 
+				setprop(user, prop++, null)
+			else => 
+				setprop(user, prop++, data)
+		}
+	}
+	if user.local_group_memberships != null =>
+		user.local_group_memberships = split_c@str(user.local_group_memberships, whitespace@strlib) 
+	if user.global_group_memberships != null =>
+		user.global_group_memberships = split_c@str(user.global_group_memberships, whitespace@strlib)
+	return user
+}
+
+user_names = []
+
+lexer = lexer@strlib(cmd@windows("net users"))
+read_till_c@strlib(lexer, ['-'])
+read_while@strlib(lexer, ['-'])
+
+while !starts_with@str(user_name = read_tok@strlib(lexer, whitespace@strlib), "The") {
+	user_names = user_names + [user_name]
+}
+
+users@windows = array(len(user_names))
+i = len(user_names)
+while i-- =>
+	users@windows[i] = get_user_info(user_names[i])
+
+endgroup
+
+endgroup
+
+
+rem file operations
+group file
+
+proc exists(fpath) =>
+	return starts_with@str(cmd@windows(cat@str("if exist ",fpath, " (echo yes)")),"yes")
+
+proc mk(fname) =>
+	system(cat@str("type nul >", fname))
+
+endgroup
+
+
+rem directory operations
+group dir
+
+proc exists(fpath) =>
+	return starts_with@str(cmd@windows(cat@str("if exist ",fpath, "\ (echo yes)")),"yes")
+
+endgroup

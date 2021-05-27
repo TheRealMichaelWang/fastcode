@@ -1,0 +1,58 @@
+group char
+
+static alpha_chars_upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+static alpha_chars_lower = "abcdefghijklmnopqrstuvwxyz"
+static alpha_chars = alpha_chars_lower + alpha_chars_upper
+static num_chars = "0123456789"
+
+proc char_to_upper(char) {
+	i = len(alpha_chars_lower)
+	while i-- {
+		if alpha_chars_lower[i] == char => break
+	}
+	if i == -1 => return 0
+	return alpha_chars_upper[i]
+}
+
+proc char_to_lower(char) {
+	i = len(alpha_chars_upper)
+	while i-- {
+		if alpha_chars_upper[i] == char => break
+	}
+	if i == -1 => return 0
+	return alpha_chars_lower[i]
+}
+
+proc to_upper(str) {
+	for char in str {
+		upper = char_to_upper(char)
+		if upper => char = upper
+	}
+	return str
+}
+
+proc to_lower(str) {
+	for char in str {
+		lower = char_to_lower(char)
+		if lower => char = lower
+	}
+	return str
+}
+
+proc is_alpha(char) {
+	for check_char in alpha_chars {
+		if check_char == char => return true
+	}
+	return false
+}
+
+proc is_num(char) {
+	for check_char in num_chars {
+		if check_char == char => return true
+	}
+	return false
+}
+
+proc is_alpha_num(char) => return is_alpha(char) or is_num(char)
+
+endgroup

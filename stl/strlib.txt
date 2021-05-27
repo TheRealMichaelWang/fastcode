@@ -3,6 +3,8 @@ rem Written by Michael Wang, 2020-2021
 
 rem A library that supports string building and tokenization whilst keeping away from arrays.
 
+include "pattern.txt"
+
 group strlib
 
 static whitespace = " \t\r\n"
@@ -20,7 +22,8 @@ struct builder {
 struct lexer {
 	_str
 	_index
-	_last_char
+	last_char
+	excluded_chars
 	size
 }
 
@@ -30,7 +33,7 @@ proc builder() {
 	return builder
 }
 
-proc append_char(builder, char) {
+proc append_c(builder, char) {
 	new_node = new _char_node
 	new_node.char = char
 	new_node.next = builder._head
@@ -41,7 +44,7 @@ proc append_char(builder, char) {
 proc append(builder, str) {
 	i = 0
 	len = len(str)
-	while i < len => append_char(builder, str[i++])
+	while i < len => append_c(builder, str[i++])
 }
 
 proc build(builder) {
@@ -61,31 +64,140 @@ proc lexer(str) {
 	lexer._index = 0
 	lexer.size = len(str)
 	lexer._index = 1
-	lexer._last_char = str[0]
+	lexer.last_char = str[0]
+	lexer.excluded_chars = []
 	return lexer
 }
 
-proc eos(lexer) => return lexer._last_char == 0
+proc eos(lexer) => return lexer.last_char == 0
+
+proc last_char(lexer) {
+	return lexer.last_char
+}
 
 proc read_char(lexer) {
 	if lexer._index == lexer.size {
-		return lexer._last_char = 0
+		return lexer.last_char = 0
 	}
-	return lexer._last_char = lexer._str[lexer._index++]
+	rchar = (lexer.last_char = lexer._str[lexer._index++])
+	if count@linq(lexer.excluded_chars, rchar) =>
+		return read_char(lexer)
+	else =>
+		return rchar
 }
 
-proc read_tok(lexer, stopchars) {
+proc read_till_c(lexer, stopchars) {
 	builder = builder()
 	if eos(lexer) => return null
-	while count@linq(stopchars, lexer._last_char) {
-		if eos(lexer) => return null
-		read_char(lexer)
-	}
-	while !eos(lexer) and !count@linq(stopchars, lexer._last_char) {
-		append_char(builder, lexer._last_char)
+	while !eos(lexer) and !count@linq(stopchars, lexer.last_char) {
+		append_c(builder, lexer.last_char)
 		read_char(lexer)
 	}
 	return build(builder)
 }
+
+proc read_while(lexer, stopchars) {
+	builder = builder()
+	if eos(lexer) => return null
+	while !eos(lexer) and count@linq(stopchars, lexer.last_char) {
+		append_c(builder, lexer.last_char)
+		read_char(lexer)
+	}
+	return build(builder)
+}
+
+proc read_till(lexer, pattern) {
+	builder = builder()
+	if eos(lexer) => return null
+	while !eos(lexer) and !match@pattern(lexer._str, lexer._index - 1, pattern) {
+		append_c(builder, lexer.last_char)
+		read_char(lexer)
+	}
+	return build(builder)
+}
+
+proc read_end(lexer) {
+	builder = builder()
+	while !eos(lexer) {
+		append_c(builder, lexer.last_char)
+		read_char(lexer)
+	}
+	return build(builder)
+}
+
+proc read_tok(lexer, stopchars) {
+	read_while(lexer, stopchars)
+	return read_till_c(lexer, stopchars)
+}
+
+endgroup
+
+group str
+
+proc split_c(str, split_chars) {
+	lexer = lexer@strlib(str)
+	split_toks = []
+	while !eos@strlib(lexer) {
+		split_toks = split_toks + [read_till_c@strlib(lexer, split_chars)]
+		read_while@strlib(lexer, split_chars)
+	}
+	return split_toks
+}
+
+proc split(str, pattern) {
+	lexer = lexer@strlib(str)
+	split_toks = []
+	while !eos@strlib(lexer) {
+		split_toks = split_toks + [read_till@strlib(lexer, pattern)]
+		for i in range(len(pattern)) => read_char@strlib(lexer)
+	}
+	return split_toks
+}
+
+proc is_whitespace(str) {
+	if len(str) == 0 => return true
+	for char in str {
+		if char != ' ' and char != '\t' and char != '\r' => return false
+	}
+	return true
+}
+
+proc replace(str, to_replace, replace_with) {
+	builder = builder@strlib()
+	i = 0
+	while i < len(str) {
+		if match@pattern(str, i, to_replace) {
+			append@strlib(builder, replace_with)
+			i = i + len(to_replace) - 1
+		}
+		else =>
+			append_c@strlib(builder, str[i])
+		i++
+	}
+	return build@strlib(builder)
+}
+
+proc cat_col(items) {
+	builder = builder@strlib()
+	for item in items {
+		if typeof(item) == numtype =>
+			append@strlib(builder, str(item))
+		elif typeof(item) == chartype =>
+			append_c@strlib(builder, item)
+		elif typeof(item) == coltype =>
+			append@strlib(builder, item)
+		else =>
+			abort("Did not expect type ", typeof(item), ".")
+	}
+	return build@strlib(builder)
+}
+
+proc cat(params args) => return cat_col(args)
+
+proc substr(str, substr) => return contains@pattern(str, substr)
+
+proc starts_with(str, pat) => return begins@pattern(str, pat)
+
+proc ends_with(str, pat) => return ends@pattern(str, pat)
 
 endgroup

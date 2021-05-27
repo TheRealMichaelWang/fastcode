@@ -1,0 +1,31 @@
+group pattern
+
+rem checks if a pattern matches at a specified index
+proc match(base, i, pat) {
+	l = len(pat)
+	if i + l > len(base) => return false
+	while l-- {
+		if base[i + l] != pat[l] => return false
+	}
+	return true
+}
+
+rem checks if a collection contains a specified sub-pattern
+proc contains(base, pattern) {
+	i = len(base) - len(pattern)
+	while i-- {
+		if match(base, i, pattern) => return true
+	}
+	return false
+}
+
+rem checks if a collection has a begins with a specified pattern
+proc begins(base, pattern) => return match(base, 0, pattern)
+
+rem checks if a collection ends with a specified pattern
+proc ends(base, pattern) {
+	if len(pattern) > len(base) => return false
+	return match(base, len(base) - len(pattern), pattern)
+}
+
+endgroup

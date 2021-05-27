@@ -1,0 +1,40 @@
+rem FastCode hashset implementation
+
+const hashsize = 1000
+
+struct set {
+	buckets
+}
+
+proc set() {
+	set = new set
+	set.buckets = array(hashsize)
+	return set
+}
+
+group set
+
+struct bucket {
+	next
+	key
+}
+
+proc insert(set, key) {
+	i = hash(key) % hashsize
+	new_bucket = new bucket
+	new_bucket.key = key
+	new_bucket.next = set.buckets[i]
+	set.buckets[i] = new_bucket
+}
+
+proc find(set, key) {
+	current = set.buckets[hash(key) % hashsize]
+	while current != null {
+		if current.key == key =>
+			return true
+		current = ref current.next
+	}
+	return false
+}
+
+endgroup
