@@ -105,6 +105,8 @@ namespace fastcode {
 				~lexer_state() {
 					for (auto it = this->constants.begin(); it != this->constants.end(); ++it)
 						delete (*it).second;
+					while (top_group != nullptr)
+						pop_group();
 				}
 
 				inline void declare_id(identifier_token* id, unsigned char type) {
@@ -158,14 +160,6 @@ namespace fastcode {
 
 			//reads the next availible character.
 			char read_char();
-
-			//gets the next availible character without eating it
-			inline char peek() {
-				if (position == source_length) {
-					return 0;
-				}
-				return source[position];
-			}
 
 			char read_data_char();
 

@@ -3,6 +3,7 @@
 #ifndef GARBAGE_H
 #define GARBAGE_H
 
+#include <list>
 #include <stack>
 #include "references.h"
 
@@ -10,26 +11,30 @@ namespace fastcode {
 	namespace runtime {
 		class garbage_collector {
 		private:
-			unsigned int size;
-			reference_apartment* head;
-			reference_apartment* tail;
-			std::stack<reference_apartment*> sweep_frames;
+			class garbage_frame {
+			private:
+				std::list<reference_apartment*> references;
+				
+				void reset_flags();
 
+			public:
+				garbage_frame();
+				~garbage_frame();
+
+				void collect(garbage_frame* prev_frame, garbage_frame* static_frame);
+
+				inline void new_reference(reference_apartment* reference) {
+					this->references.push_back(reference);
+				}
+			};
+
+			std::stack<garbage_frame*> garbage_frames;
 		public:
 			garbage_collector();
 			~garbage_collector();
 
-			//initializes a new garbage collection frame
-			inline void new_frame() {
-				if (tail != nullptr)
-					this->sweep_frames.push(tail);
-			}
-
-			//creates a new variable apartment within the garbage collector
-			reference_apartment* new_apartment(value* initial_value);
-
-			//de-allocates unused variable appartments within the current garbage collection frame
-			unsigned int sweep(bool pop_frame);
+			void new_frame();
+			void collect_frame(bool pop);
 		};
 	}
 }

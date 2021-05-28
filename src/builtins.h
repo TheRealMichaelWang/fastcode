@@ -10,9 +10,9 @@
 
 namespace fastcode {
 	namespace builtins {
-		typedef runtime::reference_apartment* (*built_in_function)(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		typedef runtime::reference_apartment* (*built_in_function)(const std::vector<value*> arguments, runtime::garbage_collector* gc);
 
-		inline void match_arg_len(std::vector<value*> arguments, unsigned int expected_size) {
+		inline void match_arg_len(const std::vector<value*> arguments, unsigned int expected_size) {
 			if (arguments.size() != expected_size)
 				throw ERROR_UNEXPECTED_ARGUMENT_SIZE;
 		}
@@ -26,7 +26,7 @@ namespace fastcode {
 			match_arg_type(value, VALUE_TYPE_COLLECTION);
 			runtime::collection* collection = (class runtime::collection*)value->ptr;
 			char* c = new char[collection->size + 1];
-			for (size_t i = 0; i < collection->size; i++)
+			for (unsigned int i = 0; i < collection->size; i++)
 			{
 				match_arg_type(collection->get_value(i), VALUE_TYPE_CHAR);
 				c[i] = *collection->get_value(i)->get_char();
@@ -36,18 +36,18 @@ namespace fastcode {
 		}
 
 		inline runtime::collection* from_c_str(const char* str, runtime::garbage_collector* gc) {
-			runtime::collection* str_col = new runtime::collection(strlen(str), gc);
-			for (size_t i = 0; i < str_col->size; i++)
+			runtime::collection* str_col = new runtime::collection((unsigned long)strlen(str), gc);
+			for (unsigned long i = 0; i < str_col->size; i++)
 			{
 				str_col->set_value(i, new value(VALUE_TYPE_CHAR, new char(str[i])));
 			}
 			return str_col;
 		}
 
-		runtime::reference_apartment* get_handle(std::vector<value*> arguments, runtime::garbage_collector* gc); 
-		runtime::reference_apartment* set_struct_property(std::vector<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* abort_program(std::vector<value*> arguments, runtime::garbage_collector* gc); 
-		runtime::reference_apartment* get_hash(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_handle(const std::vector<value*> arguments, runtime::garbage_collector* gc); 
+		runtime::reference_apartment* set_struct_property(const std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* abort_program(const std::vector<value*> arguments, runtime::garbage_collector* gc); 
+		runtime::reference_apartment* get_hash(const std::vector<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

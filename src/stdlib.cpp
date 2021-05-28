@@ -8,7 +8,7 @@
 
 namespace fastcode {
 	namespace builtins {
-		runtime::reference_apartment* get_handle(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_handle(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 1);
 			if (arguments[0]->type == VALUE_TYPE_STRUCT) {
 				return gc->new_apartment(new value(VALUE_TYPE_HANDLE, ((runtime::structure*)arguments[0]->ptr)->get_parent_ref()));
@@ -19,7 +19,7 @@ namespace fastcode {
 			throw ERROR_INVALID_VALUE_TYPE;
 		}
 
-		runtime::reference_apartment* set_struct_property(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* set_struct_property(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 3);
 			match_arg_type(arguments[0], VALUE_TYPE_STRUCT);
 			match_arg_type(arguments[1], VALUE_TYPE_NUMERICAL);
@@ -43,7 +43,7 @@ namespace fastcode {
 			return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 		}
 
-		runtime::reference_apartment* abort_program(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* abort_program(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			if (arguments.size() > 0) {
 				std::cout << "The program was aborted with the following message:" << std::endl;
 				for (auto i = arguments.begin(); i != arguments.end(); ++i) {
@@ -62,7 +62,7 @@ namespace fastcode {
 			throw ERROR_ABORTED;
 		}
 
-		runtime::reference_apartment* get_hash(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_hash(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 1);
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new double((unsigned int)arguments[0]->hash())));
 		}

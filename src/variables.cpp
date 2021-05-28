@@ -13,14 +13,14 @@ namespace fastcode {
 		variable_manager::variable_manager(class garbage_collector* garbage_collector) {
 			this->size = 0;
 			this->garbage_collector = garbage_collector;
-			for (size_t i = 0; i < VARIABLE_HASH_BUCKET_SIZE; i++)
+			for (unsigned int i = 0; i < VARIABLE_HASH_BUCKET_SIZE; i++)
 			{
 				hash_buckets[i] = nullptr;
 			}
 		}
 
 		variable_manager::~variable_manager() {
-			for (size_t i = 0; i < VARIABLE_HASH_BUCKET_SIZE; i++)
+			for (unsigned int i = 0; i < VARIABLE_HASH_BUCKET_SIZE; i++)
 			{
 				if (hash_buckets[i] != nullptr) {
 					variable_bucket* current = hash_buckets[i];

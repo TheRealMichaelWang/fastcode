@@ -4,7 +4,7 @@
 
 namespace fastcode {
 	namespace builtins {
-		runtime::reference_apartment* allocate_array(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* allocate_array(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 1);
 			match_arg_type(arguments[0], VALUE_TYPE_NUMERICAL);
 
@@ -18,7 +18,7 @@ namespace fastcode {
 			return allocated_array->get_parent_ref();
 		}
 
-		runtime::reference_apartment* get_length(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_length(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 1);
 			match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
 
@@ -26,14 +26,14 @@ namespace fastcode {
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double((long double)collection->size)));
 		}
 
-		runtime::reference_apartment* count_instances(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* count_instances(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			match_arg_len(arguments, 2);
 			match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
 
 			runtime::collection* collection = (runtime::collection*)arguments[0]->ptr;
 			unsigned int instances = 0;
 
-			for (size_t i = 0; i < collection->size; i++)
+			for (unsigned int i = 0; i < collection->size; i++)
 			{
 				if (collection->get_value(i)->compare(arguments[1]) == 0)
 					instances++;
@@ -41,7 +41,7 @@ namespace fastcode {
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double((long double)instances)));
 		}
 
-		runtime::reference_apartment* get_range(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_range(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			long double start = 0;
 			long double step = 1;
 			long double stop;

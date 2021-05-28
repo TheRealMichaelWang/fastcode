@@ -10,10 +10,10 @@
 
 namespace fastcode {
 	namespace builtins {
-		runtime::reference_apartment* allocate_array(std::vector<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* get_length(std::vector<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* count_instances(std::vector<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* get_range(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* allocate_array(const std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_length(const std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* count_instances(const std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* get_range(const std::vector<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

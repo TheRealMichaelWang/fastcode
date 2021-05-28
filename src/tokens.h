@@ -52,7 +52,7 @@ namespace fastcode {
 	namespace parsing {
 		struct token {
 			unsigned char type;
-			token(unsigned char type);
+			explicit token(unsigned char type);
 		};
 
 		struct value_token :token {
@@ -73,7 +73,7 @@ namespace fastcode {
 		public:
 			unsigned long id_hash;
 			
-			identifier_token(const char* identifier);
+			explicit identifier_token(const char* identifier);
 			identifier_token(char* identifier, unsigned long id_hash, bool delete_id = true);
 			~identifier_token();
 
@@ -102,7 +102,7 @@ namespace fastcode {
 		struct variable_access_token : token {
 			std::list<token*> modifiers;
 			
-			variable_access_token(std::list<token*> modifiers);
+			variable_access_token(const std::list<token*> modifiers);
 			~variable_access_token();
 
 			inline identifier_token* get_identifier() {
@@ -115,7 +115,7 @@ namespace fastcode {
 		struct index_token : token {
 			token* value;
 			
-			index_token(token* value);
+			explicit index_token(token* value);
 			~index_token();
 
 			void print();
@@ -124,7 +124,7 @@ namespace fastcode {
 		struct get_reference_token :token {
 			variable_access_token* var_access;
 			
-			get_reference_token(variable_access_token* var_access);
+			explicit get_reference_token(variable_access_token* var_access);
 			~get_reference_token();
 
 			void print();
@@ -145,7 +145,7 @@ namespace fastcode {
 			identifier_token* identifier;
 			std::list<token*> arguments;
 			
-			function_call_token(identifier_token* identifier, std::list<token*> arguments);
+			function_call_token(identifier_token* identifier, const std::list<token*> arguments);
 			~function_call_token();
 
 			void print();
@@ -154,7 +154,7 @@ namespace fastcode {
 		struct return_token :token {
 			token* value;
 			
-			return_token(token* value);
+			explicit return_token(token* value);
 			~return_token();
 
 			void print();
@@ -165,7 +165,7 @@ namespace fastcode {
 			std::list<token*> instructions;
 			conditional_token* next;
 
-			conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next);
+			conditional_token(unsigned char type, token* condition, const std::list<token*> instructions, conditional_token* next);
 			~conditional_token();
 			
 			conditional_token* get_next_conditional(bool condition_val);
@@ -177,7 +177,7 @@ namespace fastcode {
 			identifier_token* identifier;
 			std::list<token*> instructions;
 
-			for_token(identifier_token* identifier, token* collection, std::list<token*> instructions);
+			for_token(identifier_token* identifier, token* collection, const std::list<token*> instructions);
 			~for_token();
 
 			void print(int indent = 0);
@@ -186,7 +186,7 @@ namespace fastcode {
 		struct create_array_token :token {
 			std::list<token*> values;
 
-			create_array_token(std::list<token*> values);
+			create_array_token(const std::list<token*> values);
 			~create_array_token();
 
 			void print();
@@ -195,7 +195,7 @@ namespace fastcode {
 		struct create_struct_token :token {
 			identifier_token* identifier;
 
-			create_struct_token(identifier_token* identifier);
+			explicit create_struct_token(identifier_token* identifier);
 			~create_struct_token();
 
 			void print();
@@ -207,7 +207,7 @@ namespace fastcode {
 			std::list<token*> tokens;
 			bool params_mode;
 
-			function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens, bool params_mode);
+			function_prototype(identifier_token* identifier, const std::list<identifier_token*> argument_identifiers, const std::list<token*> tokens, bool params_mode);
 			~function_prototype();
 
 			void print();
@@ -215,7 +215,7 @@ namespace fastcode {
 
 		struct include_token :token {
 		public:
-			include_token(char* file_path);
+			explicit include_token(char* file_path);
 			~include_token();
 
 			inline const char* get_file_path() {

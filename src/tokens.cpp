@@ -110,7 +110,7 @@ namespace fastcode {
 				delete[] id_str_ptr;
 		}
 
-		variable_access_token::variable_access_token(std::list<token*> modifiers) : token(TOKEN_VAR_ACCESS) {
+		variable_access_token::variable_access_token(const std::list<token*> modifiers) : token(TOKEN_VAR_ACCESS) {
 			this->modifiers = modifiers;
 			if (this->modifiers.size() < 1)
 				throw ERROR_INVALID_ACCESSOR_MODIFIERS;
@@ -168,7 +168,7 @@ namespace fastcode {
 			destroy_value_tok(this->value);
 		}
 
-		function_call_token::function_call_token(identifier_token* identifier, std::list<token*> arguments) : token(TOKEN_FUNCTION_CALL) {
+		function_call_token::function_call_token(identifier_token* identifier, const std::list<token*> arguments) : token(TOKEN_FUNCTION_CALL) {
 			this->identifier = identifier;
 			this->arguments = arguments;
 			for (auto i = this->arguments.begin(); i != this->arguments.end(); ++i)
@@ -192,7 +192,7 @@ namespace fastcode {
 			destroy_value_tok(this->value);
 		}
 
-		conditional_token::conditional_token(unsigned char type, token* condition, std::list<token*> instructions, conditional_token* next) : token(type) {
+		conditional_token::conditional_token(unsigned char type, token* condition, const std::list<token*> instructions, conditional_token* next) : token(type) {
 			if (!is_control_tok(type) || (type != TOKEN_ELSE && !is_value_tok(condition)))
 				throw ERROR_UNEXPECTED_TOKEN;
 			this->condition = condition;
@@ -228,7 +228,7 @@ namespace fastcode {
 			throw ERROR_UNRECOGNIZED_TOKEN;
 		}
 
-		for_token::for_token(identifier_token* identifier, token* collection, std::list<token*> instructions) : token(TOKEN_FOR){
+		for_token::for_token(identifier_token* identifier, token* collection, const std::list<token*> instructions) : token(TOKEN_FOR){
 			this->collection = collection;
 			this->identifier = identifier;
 			this->instructions = instructions;
@@ -241,7 +241,7 @@ namespace fastcode {
 				destroy_top_lvl_tok(*i);
 		}
 
-		create_array_token::create_array_token(std::list<token*> values) : token(TOKEN_CREATE_ARRAY) {
+		create_array_token::create_array_token(const std::list<token*> values) : token(TOKEN_CREATE_ARRAY) {
 			for (auto i = values.begin(); i != values.end(); ++i)
 				if (!is_value_tok(*i))
 					throw ERROR_UNEXPECTED_TOKEN;
@@ -261,7 +261,7 @@ namespace fastcode {
 			delete this->identifier;
 		}
 
-		function_prototype::function_prototype(identifier_token* identifier, std::list<identifier_token*> argument_identifiers, std::list<token*> tokens, bool params_mode) : token(TOKEN_FUNC_PROTO) {
+		function_prototype::function_prototype(identifier_token* identifier, const std::list<identifier_token*> argument_identifiers, const std::list<token*> tokens, bool params_mode) : token(TOKEN_FUNC_PROTO) {
 			this->identifier = identifier;
 			this->argument_identifiers = argument_identifiers;
 			this->tokens = tokens;
