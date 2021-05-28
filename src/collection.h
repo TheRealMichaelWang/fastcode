@@ -21,8 +21,8 @@ namespace fastcode {
 			collection(collection* a, collection* b, reference_apartment* parent_reference);
 			~collection();
 			inline void set_reference(unsigned long index, reference_apartment* reference) {
-				this->inner_collection[index]->remove_reference(parent_reference);
-				reference->add_reference(parent_reference);
+				this->inner_collection[index]->remove_parent_references(parent_reference);
+				reference->add_parent_references(parent_reference);
 				this->inner_collection[index] = reference;
 			}
 

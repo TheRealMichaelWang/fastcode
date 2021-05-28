@@ -61,5 +61,10 @@ namespace fastcode {
 			}
 			throw ERROR_ABORTED;
 		}
+
+		runtime::reference_apartment* get_hash(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+			match_arg_len(arguments, 1);
+			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new double((unsigned int)arguments[0]->hash())));
+		}
 	}
 }

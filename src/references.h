@@ -13,10 +13,10 @@ namespace fastcode {
 
 			//gets the TOP level children, does NOT get it's childrens children
 			reference_apartment** get_children(unsigned int* children_size);
-
 		public:
 			value* value;
 			reference_apartment* next_apartment;
+
 			reference_apartment(class value* value, reference_apartment* next_apartment = nullptr);
 			~reference_apartment();
 
@@ -24,13 +24,13 @@ namespace fastcode {
 			void add_reference();
 
 			//adds a reference to it and all it's child reference apartments, adds the amount of parent references
-			void add_reference(reference_apartment* parent);
+			void add_parent_references(reference_apartment* parent);
 
 			//adds a reference to it and all it's child reference apartments
 			void remove_reference();
 
 			//adds a reference to it and all it's child reference apartments, removes the amount of parent references
-			void remove_reference(reference_apartment* parent);
+			void remove_parent_references(reference_apartment* parent);
 
 			//checks whether the reference apartment can be deleted
 			inline bool can_delete() {

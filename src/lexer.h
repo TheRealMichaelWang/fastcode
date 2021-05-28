@@ -4,8 +4,8 @@
 #define LEXER_H
 
 #include <list>
-#include <set>
-#include <map>
+#include <unordered_set>
+#include <unordered_map>
 
 #include "builtins.h"
 #include "tokens.h"
@@ -22,7 +22,7 @@ namespace fastcode {
 			private:
 				struct identifier_system
 				{
-					std::set<unsigned long> declerations;
+					std::unordered_set<unsigned long> declerations;
 					std::list<identifier_token*> references;
 				};
 
@@ -100,7 +100,7 @@ namespace fastcode {
 
 				group* top_group = nullptr;
 			public:
-				std::map<unsigned long, value_token*> constants;
+				std::unordered_map<unsigned long, value_token*> constants;
 
 				~lexer_state() {
 					for (auto it = this->constants.begin(); it != this->constants.end(); ++it)

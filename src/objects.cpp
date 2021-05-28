@@ -50,14 +50,14 @@ namespace fastcode {
 		
 		void structure::set_reference(unsigned long id_hash, reference_apartment* reference) {
 			unsigned int index = prototype->get_index(id_hash);
-			this->properties[index]->remove_reference(parent_reference);
-			reference->add_reference(parent_reference);
+			this->properties[index]->remove_parent_references(parent_reference);
+			reference->add_parent_references(parent_reference);
 			this->properties[index] = reference;
 		}
 
 		void structure::set_reference_at(unsigned int index, reference_apartment* reference) {
-			this->properties[index]->remove_reference(parent_reference);
-			reference->add_reference(parent_reference);
+			this->properties[index]->remove_parent_references(parent_reference);
+			reference->add_parent_references(parent_reference);
 			this->properties[index] = reference;
 		}
 
@@ -66,7 +66,7 @@ namespace fastcode {
 			for (size_t i = 0; i < this->prototype->property_count; i++)
 			{
 				kopy->properties[i] = this->properties[i];
-				this->properties[i]->add_reference(parent_reference);
+				this->properties[i]->add_parent_references(parent_reference);
 			}
 			return kopy;
 		}
@@ -91,12 +91,12 @@ namespace fastcode {
 			for (size_t i = 0; i < a->size; i++)
 			{
 				this->inner_collection[i] = a->inner_collection[i];
-				this->inner_collection[i]->add_reference(parent_reference);
+				this->inner_collection[i]->add_parent_references(parent_reference);
 			}
 			for (size_t i = 0; i < b->size; i++)
 			{
 				this->inner_collection[a->size + i] = b->inner_collection[i];
-				b->inner_collection[i]->add_reference(parent_reference);
+				b->inner_collection[i]->add_parent_references(parent_reference);
 			}
 		}
 

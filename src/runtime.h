@@ -3,9 +3,9 @@
 #ifndef RUNTIME_H
 #define RUNTIME_H
 
-#include <map>
+#include <unordered_map>
 #include <stack>
-#include <set>
+#include <unordered_set>
 
 #include "errors.h"
 #include "value.h"
@@ -80,11 +80,11 @@ namespace fastcode {
 			garbage_collector garbage_collector;
 			std::stack<call_frame*> call_stack;
 
-			std::map<unsigned long, fastcode::parsing::structure_prototype*> struct_definitions;
-			std::map<unsigned long, parsing::function_prototype*> function_definitions;
-			std::map<unsigned long, builtins::built_in_function> built_in_functions;
+			std::unordered_map<unsigned long, fastcode::parsing::structure_prototype*> struct_definitions;
+			std::unordered_map<unsigned long, parsing::function_prototype*> function_definitions;
+			std::unordered_map<unsigned long, builtins::built_in_function> built_in_functions;
 
-			std::set<unsigned long> included_files;
+			std::unordered_set<unsigned long> included_files;
 
 			struct parsing::lexer::lexer_state lexer_state;
 
@@ -101,25 +101,6 @@ namespace fastcode {
 				get_ref(access)->set_value(val);
 			}
 
-			inline void delete_tok(parsing::token* tok) {
-				if (tok->type != TOKEN_FUNC_PROTO && tok->type != TOKEN_STRUCT_PROTO)
-					parsing::destroy_top_lvl_tok(tok);
-				else if (tok->type == TOKEN_FUNC_PROTO) {
-					parsing::function_prototype* proto = (parsing::function_prototype*)tok;
-					if (!function_definitions.count(proto->identifier->id_hash))
-						delete proto;
-					else if (function_definitions[proto->identifier->id_hash] != proto)
-						delete proto;
-				}
-				else if (tok->type == TOKEN_STRUCT_PROTO) {
-					parsing::structure_prototype* proto = (parsing::structure_prototype*)tok;
-					if (!struct_definitions.count(proto->identifier->id_hash))
-						delete proto;
-					else if (struct_definitions[proto->identifier->id_hash] != proto)
-						delete proto;
-				}
-			}
-
 			/*
 			* IMPORTANT NOTE:
 			Value eval must be returned as a pointer because C++ often messes around with when we return it. Using a pointer just keeps one singular version.
@@ -134,7 +115,17 @@ namespace fastcode {
 
 			bool multi_sweep;
 
-			//reference_apartment* get_help(std::vector<value*> args, runtime::garbage_collector* gc);
+			inline bool tok_internalized(parsing::token* tok) {
+				if (tok->type == TOKEN_STRUCT_PROTO) {
+					parsing::structure_prototype* proto = (parsing::structure_prototype*)tok;
+					return this->struct_definitions[proto->identifier->id_hash] == proto;
+				}
+				else if (tok->type == TOKEN_FUNC_PROTO) {
+					parsing::function_prototype* proto = (parsing::function_prototype*)tok;
+					return this->function_definitions[proto->identifier->id_hash] == proto;
+				}
+				return false;
+			}
 		public:
 			int last_error;
 
@@ -144,7 +135,7 @@ namespace fastcode {
 			interpreter(bool multi_sweep);
 			~interpreter();
 
-			long double run(const char* source, bool interactive_mode, bool handle_err = true);
+			long double run(const char* source, bool interactive_mode);
 
 			void include(const char* file_path);
 

@@ -46,6 +46,7 @@ namespace fastcode {
 			import_func("range", builtins::get_range);
 			import_func("handle", builtins::get_handle);
 			import_func("setprop", builtins::set_struct_property);
+			import_func("hash", builtins::get_hash);
 			import_func("abort", builtins::abort_program);
 			import_func("system", builtins::system_call);
 			import_func("read@file", builtins::file_read_text);
@@ -67,7 +68,7 @@ namespace fastcode {
 			}
 		}
 
-		long double interpreter::run(const char* source, bool interactive_mode, bool handle_err) {
+		long double interpreter::run(const char* source, bool interactive_mode) {
 			parsing::lexer* lexer = nullptr;
 			std::list<parsing::token*> to_execute;
 			try {
@@ -97,20 +98,18 @@ namespace fastcode {
 			catch (int runtime_error) {
 				last_error = runtime_error;
 				
-				if (handle_err) {
-					std::stack<parsing::function_prototype*> toprint;
-					//cleanup
-					while (call_stack.size() > 1)
-					{
-						toprint.push(call_stack.top()->prototype);
-						delete call_stack.top();
-						call_stack.pop();
-					}
-
-					print_call_stack(toprint);
-					handle_runtime_err(runtime_error, err_tok);
-					delete_tok(err_tok);
+				std::stack<parsing::function_prototype*> toprint;
+				//cleanup
+				while (call_stack.size() > 1)
+				{
+					toprint.push(call_stack.top()->prototype);
+					delete call_stack.top();
+					call_stack.pop();
 				}
+
+				print_call_stack(toprint);
+				handle_runtime_err(runtime_error, err_tok);
+				
 				ret_val = nullptr;
 				err = true;
 			}
@@ -118,25 +117,17 @@ namespace fastcode {
 			if(multi_sweep)
 				garbage_collector.sweep(false);
 
-			for (auto it = to_execute.begin(); it != to_execute.end(); ++it) {
-				if (!(*it == err_tok && err)) {
-					delete_tok(*it);
-				}
-			}
+			for (auto it = to_execute.begin(); it != to_execute.end(); ++it)
+				if(!tok_internalized(*it))
+					delete* it;
 
-			if (handle_err) {
-				if (err)
-					return -abs(last_error);
-				if (ret_val == nullptr)
-					return 0;
-				long double exit_code = *ret_val->get_value()->get_numerical();
-				delete ret_val;
-				return exit_code;
-			}
-			else if(err) {
-				delete ret_val;
-				throw last_error;
-			}
+			if (err)
+				return -abs(last_error);
+			if (ret_val == nullptr)
+				return 0;
+			long double exit_code = *ret_val->get_value()->get_numerical();
+			delete ret_val;
+			return exit_code;
 		}
 
 		void interpreter::include(const char* file_path) {
@@ -158,15 +149,11 @@ namespace fastcode {
 			infile.read(buffer, buffer_length);
 			infile.close();
 			buffer[buffer_length] = 0;
-			try {
-				run(buffer, false, false);
-				delete[] buffer;
-			}
-			catch (int err){
-				delete[] buffer;
-				included_files.erase(path_hash);
-				throw err;
-			}
+			long rc = run(buffer, false);
+			delete[] buffer;
+			included_files.erase(path_hash);
+			if (rc != 0)
+				throw ERROR_CANNOT_INCLUDE_FILE;
 		}
 
 		void interpreter::set_ref(parsing::variable_access_token* access, reference_apartment* reference) {

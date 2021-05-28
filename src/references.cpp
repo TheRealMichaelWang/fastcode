@@ -26,14 +26,14 @@ namespace fastcode {
 			}
 		}
 
-		void reference_apartment::add_reference(reference_apartment* parent) {
+		void reference_apartment::add_parent_references(reference_apartment* parent) {
 			this->references += parent->references;
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
 				for (size_t i = 0; i < children_count; i++)
 				{
-					children[i]->add_reference(parent);
+					children[i]->add_parent_references(parent);
 				}
 			}
 		}
@@ -52,8 +52,8 @@ namespace fastcode {
 			}
 		}
 
-		void reference_apartment::remove_reference(reference_apartment* parent) {
-			if (this->references - parent->references < 0)
+		void reference_apartment::remove_parent_references(reference_apartment* parent) {
+			if (parent->references > this->references)
 				throw ERROR_CANNOT_DEREFERENCE;
 			this->references -= parent->references;
 			unsigned int children_count = 0;
@@ -61,7 +61,7 @@ namespace fastcode {
 			if (children != nullptr) {
 				for (size_t i = 0; i < children_count; i++)
 				{
-					children[i]->remove_reference(parent);
+					children[i]->remove_parent_references(parent);
 				}
 			}
 		}
@@ -73,7 +73,7 @@ namespace fastcode {
 				for (size_t i = 0; i < children_count; i++)
 				{
 					if (this->references > 0)
-						children[i]->remove_reference(this);
+						children[i]->remove_parent_references(this);
 				}
 			}
 			delete this->value;
@@ -83,7 +83,7 @@ namespace fastcode {
 				for (size_t i = 0; i < children_count; i++)
 				{
 					if (this->references > 0)
-						children[i]->add_reference(this);
+						children[i]->add_parent_references(this);
 				}
 			}
 		}

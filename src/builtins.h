@@ -46,7 +46,8 @@ namespace fastcode {
 
 		runtime::reference_apartment* get_handle(std::vector<value*> arguments, runtime::garbage_collector* gc); 
 		runtime::reference_apartment* set_struct_property(std::vector<value*> arguments, runtime::garbage_collector* gc);
-		runtime::reference_apartment* abort_program(std::vector<value*> arguments, runtime::garbage_collector* gc);
+		runtime::reference_apartment* abort_program(std::vector<value*> arguments, runtime::garbage_collector* gc); 
+		runtime::reference_apartment* get_hash(std::vector<value*> arguments, runtime::garbage_collector* gc);
 	}
 }
 

@@ -4,7 +4,7 @@
 #define STRUCT_H
 
 #include <list>
-#include <map>
+#include <unordered_map>
 #include "tokens.h"
 #include "references.h"
 #include "garbage.h"
@@ -13,7 +13,7 @@ namespace fastcode {
 	namespace parsing {
 		class structure_prototype : public token {
 		private:
-			std::map<unsigned long, unsigned int> property_indicies;
+			std::unordered_map<unsigned long, unsigned int> property_indicies;
 			std::list<identifier_token*> properties;
 		public:
 
