@@ -1,0 +1,69 @@
+rem FastCode, written by Michael Wang 2020-2021
+
+struct list {
+	head
+	tail
+	size
+}
+
+proc list() {
+	list = new list
+	list.size = 0
+	return list
+}
+
+group list
+
+struct node {
+	value
+	next
+}
+
+proc node(value, next) {
+	node = new node
+	node.value = value
+	node.next = next
+	return node
+}
+
+proc push_front(list, value) {
+	if list.size == 0 =>
+		list.head = list.tail = node(value, null)
+	else =>
+		list.head = node(value, list.head)
+	list.size++
+}
+
+proc push_back(list, value) {
+	if list.size == 0 =>
+		list.head = list.tail = node(value, null)
+	else {
+		new_node = node(value, null)
+		list.tail.next = new_node
+		list.tail = new_node
+	}
+	list.size++
+}
+
+proc pop_front(list) {
+	value = ref list.head.value
+	if list.size <= 1 =>
+		list.head = list.tail = null
+	else =>
+		list.head = list.head.next
+	size--
+	return value
+}
+
+proc iterate(list) {
+	to_iterate = array(list.size)
+	current = list.head
+	i = 0
+	while current != null {
+		to_iterate[i++] = ref current.value
+		current = ref current.next
+	}
+	return to_iterate
+}
+
+endgroup
