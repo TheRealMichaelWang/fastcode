@@ -34,7 +34,7 @@ namespace fastcode {
 
 	namespace runtime {
 		structure::structure(parsing::structure_prototype* prototype, garbage_collector* gc) : structure(prototype, gc->new_apartment(new value(VALUE_TYPE_STRUCT, this))) {
-			for (size_t i = 0; i < prototype->property_count; i++)
+			for (unsigned int i = 0; i < prototype->property_count; i++)
 				this->properties[i] = gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 		}
 
@@ -63,7 +63,7 @@ namespace fastcode {
 
 		structure* structure::clone(reference_apartment* parent_reference) {
 			structure* kopy = new structure(this->prototype, parent_reference);
-			for (size_t i = 0; i < this->prototype->property_count; i++)
+			for (unsigned int i = 0; i < this->prototype->property_count; i++)
 			{
 				kopy->properties[i] = this->properties[i];
 				this->properties[i]->add_parent_references(parent_reference);
@@ -73,7 +73,7 @@ namespace fastcode {
 
 		int structure::hash() {
 			int hash = 2187; //magic num for structs
-			for (size_t i = 0; i < this->prototype->property_count; i++)
+			for (unsigned int i = 0; i < this->prototype->property_count; i++)
 			{
 				hash = combine_hash(hash, this->properties[i]->value->hash());
 			}
@@ -88,12 +88,12 @@ namespace fastcode {
 		}
 
 		collection::collection(collection* a, collection* b, reference_apartment* parent_reference) : collection(a->size + b->size, parent_reference) {
-			for (size_t i = 0; i < a->size; i++)
+			for (unsigned int i = 0; i < a->size; i++)
 			{
 				this->inner_collection[i] = a->inner_collection[i];
 				this->inner_collection[i]->add_parent_references(parent_reference);
 			}
-			for (size_t i = 0; i < b->size; i++)
+			for (unsigned int i = 0; i < b->size; i++)
 			{
 				this->inner_collection[a->size + i] = b->inner_collection[i];
 				b->inner_collection[i]->add_parent_references(parent_reference);
@@ -119,7 +119,7 @@ namespace fastcode {
 
 		int collection::hash() {
 			int hash = 66; //magic number for collection hahses
-			for (size_t i = 0; i < this->size; i++)
+			for (unsigned int i = 0; i < this->size; i++)
 				hash = combine_hash(hash, this->inner_collection[i]->value->hash());
 			return hash;
 		}
@@ -138,7 +138,7 @@ namespace fastcode {
 			}
 			return nullptr;
 		}
-	}
+	} 
 
 	value::~value() {
 		switch (this->type)

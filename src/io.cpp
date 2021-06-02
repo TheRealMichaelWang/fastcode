@@ -11,8 +11,8 @@
 #include <stack>
 
 namespace fastcode {
-	inline void print_indent(int indent) {
-		for (size_t i = 0; i < indent; i++)
+	inline void print_indent(unsigned int indent) {
+		for (unsigned int i = 0; i < indent; i++)
 			std::cout << '\t';
 	}
 
@@ -318,9 +318,8 @@ namespace fastcode {
 	void handle_syntax_err(int syntax_error, unsigned int pos, const char* source) {
 		std::cout << std::endl << "***Syntax Error: " << get_err_info(syntax_error) << "***" << std::endl;
 		std::cout << "Error Code: " << syntax_error << '\t' << "Lexer Index: " << pos << std::endl;
-		for (int i = (int)pos - (int)17 > 0 ? pos - 17 : 0; i < strlen(source) && i < pos + 17; i++) {
+		for (unsigned int i = pos >= 20 ? pos - 20 : 0; i < strlen(source) && i < pos + 20; i++) 
 			std::cout << source[i];
-		}
 		std::cout << "" << std::endl;
 	}
 
@@ -350,7 +349,7 @@ namespace fastcode {
 		runtime::reference_apartment** children = structure->get_children();
 		std::list<parsing::identifier_token*> props = structure->get_proto()->get_properties();
 		auto it = props.begin();
-		for (size_t i = 0; i < structure->get_size(); i++)
+		for (unsigned int i = 0; i < structure->get_size(); i++)
 		{
 			std::cout << std::endl;
 			print_indent(indent + 1);
@@ -363,7 +362,7 @@ namespace fastcode {
 
 	void print_array(runtime::collection* collection, bool primitive_mode) {
 		bool is_str = true;
-		for (size_t i = 0; i < collection->size; i++)
+		for (unsigned int i = 0; i < collection->size; i++)
 		{
 			if (collection->get_value(i)->type != VALUE_TYPE_CHAR) {
 				is_str = false;
@@ -373,7 +372,7 @@ namespace fastcode {
 		if (is_str) {
 			if (primitive_mode)
 				std::cout << '\"';
-			for (size_t i = 0; i < collection->size; i++)
+			for (unsigned int i = 0; i < collection->size; i++)
 			{
 				std::cout << *collection->get_value(i)->get_char();
 			}
@@ -386,7 +385,7 @@ namespace fastcode {
 				return;
 			}
 			std::cout << '[';
-			for (size_t i = 0; i < collection->size; i++)
+			for (unsigned int i = 0; i < collection->size; i++)
 			{
 				print_value(collection->get_value(i), false);
 				if (i != collection->size - 1)
@@ -421,7 +420,7 @@ namespace fastcode {
 				std::cout << '<' << ((runtime::structure*)val->ptr)->get_identifier()->get_identifier() << '>';
 			break;
 		case VALUE_TYPE_HANDLE:
-			std::cout << "<handle " << (long)val->ptr << ">";
+			std::cout << "<handle " << val->ptr << ">";
 			break;
 		default:
 			throw ERROR_INVALID_VALUE_TYPE;
@@ -429,31 +428,31 @@ namespace fastcode {
 	}
 
 	namespace builtins {
-		runtime::reference_apartment* print(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* print(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			for (auto it = arguments.begin(); it != arguments.end(); ++it) {
 				print_value(*it, true);
 			}
 			return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 		}
 
-		runtime::reference_apartment* print_line(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* print_line(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			runtime::reference_apartment* appt = print(arguments, gc);
 			std::cout << std::endl;
 			return appt;
 		}
 
-		runtime::reference_apartment* get_input(std::vector<value*> arguments, runtime::garbage_collector* gc) {
+		runtime::reference_apartment* get_input(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 			char* input = new char[250];
 			std::cin.getline(input, 250);
 			runtime::collection* str = from_c_str(input, gc);
 			return str->get_parent_ref();
 		}
 
-		runtime::reference_apartment* file_read_text(std::vector<value*> args, runtime::garbage_collector* gc) {
-			match_arg_len(args, 1);
-			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
+		runtime::reference_apartment* file_read_text(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
+			match_arg_len(arguments, 1);
+			match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
 
-			char* file_path = to_c_str(args[0]);
+			char* file_path = to_c_str(arguments[0]);
 
 			std::ifstream infile(file_path, std::ifstream::binary);
 
@@ -462,7 +461,7 @@ namespace fastcode {
 			delete[] file_path;
 
 			infile.seekg(0, std::ios::end);
-			int buffer_length = infile.tellg();
+			unsigned long buffer_length = infile.tellg();
 			infile.seekg(0, std::ios::beg);
 			char* buffer = new char[buffer_length + 1];
 			infile.read(buffer, buffer_length);
@@ -474,12 +473,12 @@ namespace fastcode {
 			return strcol->get_parent_ref();
 		}
 
-		runtime::reference_apartment* file_write_text(std::vector<value*> args, runtime::garbage_collector* gc) {
-			match_arg_len(args, 2);
-			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
-			match_arg_type(args[1], VALUE_TYPE_COLLECTION);
+		runtime::reference_apartment* file_write_text(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
+			match_arg_len(arguments, 2);
+			match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
+			match_arg_type(arguments[1], VALUE_TYPE_COLLECTION);
 
-			char* file_path = to_c_str(args[0]);
+			char* file_path = to_c_str(arguments[0]);
 
 			std::ofstream infile(file_path, std::ofstream::binary);
 
@@ -487,7 +486,7 @@ namespace fastcode {
 				return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(0)));
 			delete[] file_path;
 
-			char* buffer = to_c_str(args[1]);
+			char* buffer = to_c_str(arguments[1]);
 			infile.write(buffer, strlen(buffer));
 			infile.close();
 			delete[] buffer;
@@ -495,11 +494,11 @@ namespace fastcode {
 			return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(1)));
 		}
 
-		runtime::reference_apartment* system_call(std::vector<value*> args, runtime::garbage_collector* gc) {
-			match_arg_len(args, 1);
-			match_arg_type(args[0], VALUE_TYPE_COLLECTION);
+		runtime::reference_apartment* system_call(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
+			match_arg_len(arguments, 1);
+			match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
 
-			char* command = to_c_str(args[0]);
+			char* command = to_c_str(arguments[0]);
 			system(command);
 			delete[] command;
 

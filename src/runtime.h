@@ -26,30 +26,33 @@ namespace fastcode {
 		class interpreter {
 		private:
 			class call_frame {
+			private:
+				garbage_collector* garbage_collector;
+
 			public:
 				variable_manager* manager;
 				parsing::function_prototype* prototype;
 
-				call_frame(parsing::function_prototype* prototype, garbage_collector* garbage_collector);
+				call_frame(parsing::function_prototype* prototype, class garbage_collector* garbage_collector);
 				~call_frame();
-
-			private:
-				garbage_collector* garbage_collector;
 			};
 
 			struct value_eval {
-			public:
-
-				unsigned char type;
-
-				value_eval(reference_apartment* reference) : value_eval(reference, VALUE_EVAL_TYPE_REF, true) {}
-				value_eval(value* value) : value_eval(value, VALUE_EVAL_TYPE_VAL, false) {}
+			private:
+				bool keep_val;
+				void* ptr;
 
 				value_eval(void* ret_obj, unsigned char type, bool keep_val) {
 					this->type = type;
 					this->ptr = ret_obj;
 					this->keep_val = keep_val;
 				}
+
+			public:
+				unsigned char type;
+
+				explicit value_eval(reference_apartment* reference) : value_eval(reference, VALUE_EVAL_TYPE_REF, true) {}
+				explicit value_eval(value* value) : value_eval(value, VALUE_EVAL_TYPE_VAL, false) {}
 
 				~value_eval() {
 					if (this->type == VALUE_EVAL_TYPE_VAL && !keep_val)
@@ -70,10 +73,6 @@ namespace fastcode {
 					}
 					return (value*)this->ptr;
 				}
-
-			private:
-				bool keep_val;
-				void* ptr;
 			};
 
 			variable_manager* static_var_manager;

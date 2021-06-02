@@ -26,6 +26,7 @@ namespace fastcode {
 
 		interpreter::interpreter(bool multi_sweep) {
 			this->multi_sweep = false;
+			this->break_mode = false;
 			static_var_manager = new variable_manager(&garbage_collector);
 			call_stack.push(new call_frame(nullptr, &garbage_collector));
 			new_constant("true", new value(VALUE_TYPE_NUMERICAL, new long double(1)));
@@ -38,6 +39,7 @@ namespace fastcode {
 			import_func("typeof", builtins::get_type);
 			import_func("num", builtins::to_numerical);
 			import_func("str", builtins::to_string);
+			import_func("char", builtins::to_char);
 			import_func("print", builtins::print);
 			import_func("printl", builtins::print_line);
 			import_func("input", builtins::get_input);
@@ -540,7 +542,7 @@ namespace fastcode {
 					if(!call_stack.top()->manager->has_var(for_tok->identifier))
 						call_stack.top()->manager->declare_var(for_tok->identifier, new value(VALUE_TYPE_NULL, nullptr));
 					
-					for (size_t i = 0; i < to_iterate->size; i++)
+					for (unsigned int i = 0; i < to_iterate->size; i++)
 					{
 						call_stack.top()->manager->set_var_reference(for_tok->identifier, to_iterate->get_reference(i));
 						value_eval* eval = execute_block(for_tok->instructions);

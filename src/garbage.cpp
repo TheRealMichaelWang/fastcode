@@ -5,6 +5,7 @@ namespace fastcode {
 		garbage_collector::garbage_collector() {
 			this->size = 0;
 			this->head = nullptr;
+			this->tail = nullptr;
 			this->sweep_frames = std::stack<reference_apartment*>();
 		}
 

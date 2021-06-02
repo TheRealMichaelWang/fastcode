@@ -19,7 +19,7 @@ namespace fastcode {
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					children[i]->add_reference();
 				}
@@ -31,7 +31,7 @@ namespace fastcode {
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					children[i]->add_parent_references(parent);
 				}
@@ -45,7 +45,7 @@ namespace fastcode {
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					children[i]->remove_reference();
 				}
@@ -59,7 +59,7 @@ namespace fastcode {
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					children[i]->remove_parent_references(parent);
 				}
@@ -70,7 +70,7 @@ namespace fastcode {
 			unsigned int children_count = 0;
 			reference_apartment** children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					if (this->references > 0)
 						children[i]->remove_parent_references(this);
@@ -80,7 +80,7 @@ namespace fastcode {
 			this->value = value;
 			children = get_children(&children_count);
 			if (children != nullptr) {
-				for (size_t i = 0; i < children_count; i++)
+				for (unsigned int i = 0; i < children_count; i++)
 				{
 					if (this->references > 0)
 						children[i]->add_parent_references(this);

@@ -10,12 +10,12 @@ using namespace fastcode;
 
 bool stop = false;
 
-runtime::reference_apartment* quit_repl(std::vector<value*> args, runtime::garbage_collector* gc) {
+runtime::reference_apartment* quit_repl(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 	stop = true;
 	return gc->new_apartment(new value(VALUE_TYPE_NULL, nullptr));
 }
 
-runtime::reference_apartment* get_help(std::vector<value*> args, runtime::garbage_collector* gc) {
+runtime::reference_apartment* get_help(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
 	std::cout << "Welcome to FastCode!\n\n\tIf this is your first time using FastCode, we urge you to read the documentation at https://github.com/TheRealMichaelWang/fastcode/wiki, or at least check out the section labled ,A Quick Guide, before reading the entirety of this document."<<std::endl;
 	return gc->new_apartment(new value(VALUE_TYPE_CHAR, new char(' ')));
 }
@@ -24,7 +24,7 @@ unsigned int code_checksum(const char* code) {
 	int brackets = 0;
 	int braces = 0;
 	int params = 0;
-	for (size_t i = 0; i < std::strlen(code); i++)
+	for (unsigned int i = 0; i < std::strlen(code); i++)
 	{
 		switch (code[i]) {
 		case '{': braces++; break;
@@ -40,23 +40,23 @@ unsigned int code_checksum(const char* code) {
 
 char* str_append(char* buf, char* toappend) {
 	char* newbuf = new char[strlen(buf) + strlen(toappend) + 1];
-	for (size_t i = 0; i < strlen(buf); i++)
+	for (unsigned int i = 0; i < strlen(buf); i++)
 		newbuf[i] = buf[i];
-	for (size_t i = 0; i < strlen(toappend); i++)
+	for (unsigned int i = 0; i < strlen(toappend); i++)
 		newbuf[i + strlen(buf)] = toappend[i];
 	newbuf[strlen(buf) + strlen(toappend)] = 0;
 	delete[] buf;
 	return newbuf;
 }
 
-inline bool has_flag(int argc, char** argv, const char* flag) {
-	for (size_t i = 0; i < argc; i++)
+inline bool has_flag(unsigned int argc, char** argv, const char* flag) {
+	for (unsigned int i = 0; i < argc; i++)
 		if (strcmp(argv[i], flag) == 0)
 			return true;
 	return false;
 }
 
-int main(int argc, char** argv) {
+int main(unsigned int argc, char** argv) {
 	const char* working_dir = argv[0];
 	runtime::interpreter interpreter(has_flag(argc, argv, "-gc"));
 
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 				std::cout << ">>> ";
 				char* line = new char[250];
 				std::cin.getline(line, 250);
-				unsigned int line_size = strlen(line);
+				unsigned int line_size = (unsigned int)strlen(line);
 				line[line_size++] = '\n';
 				line[line_size] = 0;
 				if (buf == nullptr)

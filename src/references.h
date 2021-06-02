@@ -10,12 +10,14 @@ namespace fastcode {
 		class reference_apartment {
 		private:
 			unsigned int references;
+			reference_apartment* next_apartment;
 
 			//gets the TOP level children, does NOT get it's childrens children
 			reference_apartment** get_children(unsigned int* children_size);
+
+			friend class garbage_collector;
 		public:
 			value* value;
-			reference_apartment* next_apartment;
 
 			reference_apartment(class value* value, reference_apartment* next_apartment = nullptr);
 			~reference_apartment();
