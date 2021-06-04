@@ -1,5 +1,7 @@
 #include <math.h>
+#include <random>
 #include "builtins.h"
+#include "collection.h"
 #include "math.h"
 
 namespace fastcode {
@@ -9,6 +11,14 @@ namespace fastcode {
 				match_arg_len(arguments, 1);
 				match_arg_type(arguments[0], VALUE_TYPE_NUMERICAL);
 				return gc->new_apartment(new value(VALUE_TYPE_NUMERICAL, new long double(std::abs(*arguments[0]->get_numerical()))));
+			}
+
+			runtime::reference_apartment* random(const std::vector<value*> arguments, runtime::garbage_collector* gc) {
+				match_arg_len(arguments, 1);
+				match_arg_type(arguments[0], VALUE_TYPE_COLLECTION);
+				runtime::collection* collection = (runtime::collection*)arguments[0]->ptr;
+				unsigned long index = abs(rand()) % collection->size;
+				return collection->get_reference(index);
 			}
 
 			runtime::reference_apartment* sin(const std::vector<value*> arguments, runtime::garbage_collector* gc) {

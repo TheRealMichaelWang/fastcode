@@ -12,6 +12,7 @@ namespace fastcode {
 	namespace builtins {
 		namespace math {
 			runtime::reference_apartment* numabs(const std::vector<value*> arguments, runtime::garbage_collector* gc);
+			runtime::reference_apartment* random(const std::vector<value*> arguments, runtime::garbage_collector* gc);
 
 			//trigonometry
 			runtime::reference_apartment* sin(const std::vector<value*> arguments, runtime::garbage_collector* gc);

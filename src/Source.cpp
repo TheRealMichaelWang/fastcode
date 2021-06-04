@@ -67,6 +67,7 @@ int main(unsigned int argc, char** argv) {
 	interpreter.import_func("help", get_help);
 
 	interpreter.import_func("abs", builtins::math::numabs);
+	interpreter.import_func("random", builtins::math::random);
 	interpreter.import_func("sin@math", builtins::math::sin);
 	interpreter.import_func("cos@math", builtins::math::cos);
 	interpreter.import_func("tan@math", builtins::math::tan);
